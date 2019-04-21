@@ -95,20 +95,34 @@ type Cartridge struct {
 	Cartridge props
 */
 type CartridgeProps struct {
-	MBCType string
-	ROMBank uint8
-	RAMBank uint8
+	MBCType   string
+	ROMLength int
+	ROMBank   uint8
+	RAMBank   uint8
 }
 
 type MBC interface {
+	ReadRom(uint16) byte
 }
 
 /*
+	====================================
 	Single ROM without MBC
 */
 type MBCRom struct {
 	rom []byte
 }
+
+/**
+Read a byte from rom via address
+*/
+func (mbc MBCRom) ReadRom(address uint16) byte {
+	return mbc.rom[address]
+}
+
+/*	Single ROM without MBC
+	=====================================
+*/
 
 func InitCartridge() {
 	fmt.Println("ss")

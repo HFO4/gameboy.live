@@ -2,19 +2,130 @@ package gb
 
 import (
 	"log"
+	"time"
 )
 
 type Core struct {
 	Cartridge Cartridge
+	CPU       CPU
+	Memory    Memory
+
+	/*
+		Clock and speed options
+	*/
+	//Frames per-second
+	FPS int
+	//CPU clock
+	Clock int
+	//in CBG mode, clock might change to twice as original
+	SpeedMultiple int
+
+	/*
+		Development options
+	*/
+	//Debug mode
+	Debug bool
+
+	/*
+		Timer
+	*/
+	Timer Timer
+}
+
+type Timer struct {
+	TimerCounter    int
+	DividerRegister int
 }
 
 func (core *Core) Init(romPath string) {
+
+	core.SpeedMultiple = 0
+	core.Timer.TimerCounter = 0
+	core.Timer.DividerRegister = 0
+
 	core.initRom(romPath)
 	core.initMemory()
+	core.initCPU()
 }
 
-func (core *Core) initMemory() {
-	log.Println("[Core] Start to initialize memory...")
+func (core *Core) Run() {
+	ticker := time.NewTicker(time.Second / time.Duration(core.FPS))
+	for range ticker.C {
+		core.Update()
+	}
+}
+
+/*
+	Render a frame.
+*/
+func (core *Core) Update() {
+	cyclesThisUpdate := 0
+	for cyclesThisUpdate < (core.Clock+core.SpeedMultiple*core.Clock)/core.FPS {
+		cycles := 1
+		cyclesThisUpdate += cycles
+		core.UpdateTimers(cycles)
+	}
+	//log.Println("Render finish")
+}
+
+/*
+	Check and update timers.
+*/
+func (core *Core) UpdateTimers(cycles int) {
+	core.DoDividerRegister(cycles)
+
+	if core.IsClockEnabled() {
+		core.Timer.TimerCounter += cycles
+		if core.Timer.TimerCounter >= core.GetClockFreqCount() {
+			// reset m_TimerTracer to the correct value
+			core.SetClockFreq()
+			// timer about to overflow
+			if core.ReadMemory(0xFF05) == 255 {
+				core.WriteMemory(0xFF05, core.ReadMemory(0xFF06))
+				//RequestInterupt(2)
+			} else {
+				core.WriteMemory(0xFF05, core.ReadMemory(0xFF05)+1)
+			}
+		}
+	}
+}
+
+func (core *Core) DoDividerRegister(cycles int) {
+	core.Timer.DividerRegister += cycles
+	if core.Timer.DividerRegister >= 255 {
+		core.Timer.DividerRegister = 0
+		core.Memory.MainMemory[0xFF04]++
+	}
+}
+
+func (core *Core) SetClockFreq() {
+	core.Timer.TimerCounter = 0
+}
+
+func (core *Core) IsClockEnabled() bool {
+	if core.ReadMemory(0xFF07)&0x04 == 0x04 {
+		return true
+	}
+	return false
+}
+
+func (core *Core) GetClockFreq() byte {
+	return core.ReadMemory(0xFF07) & 0x3
+}
+
+func (core *Core) GetClockFreqCount() int {
+	switch core.GetClockFreq() {
+	case 0:
+		return 1024
+	case 1:
+		return 16
+	case 2:
+		return 64
+	case 3:
+		return 256
+	default:
+		return 1024
+	}
 }
 
 /*
@@ -65,7 +176,8 @@ func (core *Core) initRom(romPath string) {
 			rom: romData,
 		}
 		core.Cartridge.Props = CartridgeProps{
-			MBCType: "rom",
+			MBCType:   "rom",
+			ROMLength: len(romData),
 		}
 	case 0x01, 0x02, 0x03:
 		log.Println("mbc1")
