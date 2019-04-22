@@ -43,6 +43,10 @@ type Flags struct {
 	Sub       bool
 	HalfCarry bool
 	Carry     bool
+	//	IME - Interrupt Master Enable Flag (Write Only)
+	//  	0 - Disable all Interrupts
+	//  	1 - Enable all Interrupts that are enabled in IE Register (FFFF)
+	InterruptMaster bool
 }
 
 func (core *Core) initCPU() {
@@ -53,6 +57,7 @@ func (core *Core) initCPU() {
 	core.CPU.Flags.Sub = false
 	core.CPU.Flags.HalfCarry = true
 	core.CPU.Flags.Carry = true
+	core.CPU.Flags.InterruptMaster = false
 
 	/*
 		Initialize register after BIOS

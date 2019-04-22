@@ -1,6 +1,7 @@
 package gb
 
 import (
+	"github.com/HFO4/gbc-in-cloud/util"
 	"log"
 	"time"
 )
@@ -64,8 +65,59 @@ func (core *Core) Update() {
 		cycles := 1
 		cyclesThisUpdate += cycles
 		core.UpdateTimers(cycles)
+		core.Interrupt()
 	}
 	//log.Println("Render finish")
+}
+
+/*
+	Check interrupt.
+*/
+func (core *Core) Interrupt() {
+	//Check the Interrupt Master Enable Flag
+	if core.CPU.Flags.InterruptMaster {
+		req := core.ReadMemory(0xFF0F)
+		enabled := core.ReadMemory(0xFFFF)
+		if req > 0 {
+			for i := 0; i < 5; i++ {
+				if util.TestBit(req, uint(i)) {
+					if util.TestBit(enabled, uint(i)) {
+						core.DoInterrupt(i)
+					}
+				}
+			}
+		}
+	}
+}
+
+/*
+	Perform interrupt
+*/
+func (core *Core) DoInterrupt(id int) {
+	//Turn of the Interrupt Master Enable Flag
+	core.CPU.Flags.InterruptMaster = false
+	req := core.ReadMemory(0xFF0F)
+	req = util.ClearBit(req, uint(id))
+	core.WriteMemory(0xFF0F, req)
+	/// we must save the current execution address by pushing it onto the stack
+	core.StackPush(core.CPU.Registers.PC)
+	//Set the PC to correspond interrupt process program:
+	// 	V-Blank: 0x40
+	//	LCD: 0x48
+	//	TIMER: 0x50
+	//	JOYPAD: 0x60
+	switch id {
+	case 0:
+		core.CPU.Registers.PC = 0x40
+	case 1:
+		core.CPU.Registers.PC = 0x48
+	case 2:
+		core.CPU.Registers.PC = 0x50
+	case 4:
+		core.CPU.Registers.PC = 0x60
+	default:
+		log.Fatalf("Unknown Interrupt: %d", id)
+	}
 }
 
 /*
@@ -82,7 +134,7 @@ func (core *Core) UpdateTimers(cycles int) {
 			// timer about to overflow
 			if core.ReadMemory(0xFF05) == 255 {
 				core.WriteMemory(0xFF05, core.ReadMemory(0xFF06))
-				//RequestInterupt(2)
+				core.RequestInterrupt(2)
 			} else {
 				core.WriteMemory(0xFF05, core.ReadMemory(0xFF05)+1)
 			}
@@ -90,6 +142,24 @@ func (core *Core) UpdateTimers(cycles int) {
 	}
 }
 
+/*
+	Request an Interrupt.
+*/
+func (core *Core) RequestInterrupt(id int) {
+	//Read the present Interrupt Flag
+	req := core.ReadMemory(0xFF0F)
+	req = util.SetBit(req, uint(id))
+	core.WriteMemory(0xFF0F, req)
+	if core.Debug {
+		log.Printf("[Debug] New interrupt requested: \nID:%d  IF:0x%X  IME:%t \n", id, req, core.CPU.Flags.InterruptMaster)
+	}
+}
+
+/*
+	Update divider register.
+	This register is incremented at rate of 16384Hz (~16779Hz on SGB).
+	In CGB Double Speed Mode it is incremented twice as fast, ie. at 32768Hz.
+*/
 func (core *Core) DoDividerRegister(cycles int) {
 	core.Timer.DividerRegister += cycles
 	if core.Timer.DividerRegister >= 255 {
@@ -98,10 +168,16 @@ func (core *Core) DoDividerRegister(cycles int) {
 	}
 }
 
+/*
+	Reset clock frequency.
+*/
 func (core *Core) SetClockFreq() {
 	core.Timer.TimerCounter = 0
 }
 
+/*
+	Check whether clock is enabled.
+*/
 func (core *Core) IsClockEnabled() bool {
 	if core.ReadMemory(0xFF07)&0x04 == 0x04 {
 		return true
@@ -109,10 +185,24 @@ func (core *Core) IsClockEnabled() bool {
 	return false
 }
 
+/*
+	Get clock frequency sign specified in TAC register.
+*/
 func (core *Core) GetClockFreq() byte {
 	return core.ReadMemory(0xFF07) & 0x3
 }
 
+/*
+	Get clock frequency sign according to clock frequency sign in TAC register.
+	FF07 - TAC - Timer Control (R/W)
+	  Bit 2    - Timer Stop  (0=Stop, 1=Start)
+	  Bits 1-0 - Input Clock Select
+             00:   4096 Hz    (~4194 Hz SGB)
+             01: 262144 Hz  (~268400 Hz SGB)
+             10:  65536 Hz   (~67110 Hz SGB)
+             11:  16384 Hz   (~16780 Hz SGB)
+
+*/
 func (core *Core) GetClockFreqCount() int {
 	switch core.GetClockFreq() {
 	case 0:
@@ -174,6 +264,12 @@ func (core *Core) initRom(romPath string) {
 	case 0x00, 0x08, 0x09, 0x0B, 0x0C, 0x0D:
 		core.Cartridge.MBC = MBCRom{
 			rom: romData,
+			//Specify which ROM bank is currently loaded into internal memory address 0x4000-0x7FFF.
+			//As ROM Bank 0 is fixed into memory address 0x0-0x3FFF this variable should never be 0,
+			//it should be at least 1. We need to initialize this variable on emulator load to 1.
+			CurrentROMBank: 1,
+			//Specify which RAM bank is currently loaded into internal memory address 0xA000-0xBFFF.
+			CurrentRAMBank: 1,
 		}
 		core.Cartridge.Props = CartridgeProps{
 			MBCType:   "rom",

@@ -103,6 +103,8 @@ type CartridgeProps struct {
 
 type MBC interface {
 	ReadRom(uint16) byte
+	ReadRomBank(uint16) byte
+	ReadRamBank(uint16) byte
 }
 
 /*
@@ -110,11 +112,31 @@ type MBC interface {
 	Single ROM without MBC
 */
 type MBCRom struct {
-	rom []byte
+	rom            []byte
+	CurrentROMBank byte
+	RAMBank        [0x8000]byte
+	CurrentRAMBank byte
+	EnableRAM      bool
 }
 
 /**
-Read a byte from rom via address
+Read a byte from RAM bank.
+In ROM only cartridge, RAM is not supported.
+*/
+func (mbc MBCRom) ReadRamBank(address uint16) byte {
+	return byte(0x00)
+}
+
+/**
+Read a byte from ROM bank.
+In ROM only cartridge, ROM banking is not supported.
+*/
+func (mbc MBCRom) ReadRomBank(address uint16) byte {
+	return mbc.rom[address]
+}
+
+/**
+Read a byte from raw rom via address
 */
 func (mbc MBCRom) ReadRom(address uint16) byte {
 	return mbc.rom[address]

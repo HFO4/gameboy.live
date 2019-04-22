@@ -20,11 +20,7 @@ import (
 	  FFFF        Interrupt Enable Register
 */
 type Memory struct {
-	MainMemory     [0x10000]byte
-	CurrentROMBank byte
-	RAMBank        [0x8000]byte
-	CurrentRAMBank byte
-	EnableRAM      bool
+	MainMemory [0x10000]byte
 }
 
 func (core *Core) initMemory() {
@@ -36,18 +32,10 @@ func (core *Core) initMemory() {
 		core.Memory.MainMemory[i] = core.Cartridge.MBC.ReadRom(uint16(i))
 	}
 
-	//Specify which ROM bank is currently loaded into internal memory address 0x4000-0x7FFF.
-	// As ROM Bank 0 is fixed into memory address 0x0-0x3FFF this variable should never be 0,
-	// it should be at least 1. We need to initialize this variable on emulator load to 1.
-	core.Memory.CurrentROMBank = 1
-
-	//Specify which RAM bank is currently loaded into internal memory address 0xA000-0xBFFF.
-	core.Memory.CurrentRAMBank = 0
-
 	//Specify other register mapped in main memory according to http://bgb.bircd.org/pandocs.htm#powerupsequence
 	core.Memory.MainMemory[0xFF05] = 0x00
 	core.Memory.MainMemory[0xFF06] = 0x00
-	core.Memory.MainMemory[0xFF07] = 0x00
+	core.Memory.MainMemory[0xFF07] = 0x04
 	core.Memory.MainMemory[0xFF10] = 0x80
 	core.Memory.MainMemory[0xFF11] = 0xBF
 	core.Memory.MainMemory[0xFF12] = 0xF3
@@ -80,14 +68,12 @@ func (core *Core) initMemory() {
 }
 
 func (core *Core) ReadMemory(address uint16) byte {
-	// are we reading from the rom memory bank?
 	if (address >= 0x4000) && (address <= 0x7FFF) {
-		newAddress := address - 0x4000
-		return core.Cartridge.MBC.ReadRom(newAddress + (uint16(core.Memory.CurrentROMBank) * 0x4000))
+		// are we reading from the rom memory bank?
+		return core.Cartridge.MBC.ReadRomBank(address)
 	} else if (address >= 0xA000) && (address <= 0xBFFF) {
 		// are we reading from ram memory bank?
-		newAddress := address - 0xA000
-		return core.Memory.RAMBank[newAddress+(uint16(core.Memory.CurrentRAMBank)*0x4000)]
+		return core.Cartridge.MBC.ReadRomBank(address)
 	}
 	return core.Memory.MainMemory[address]
 }
@@ -103,8 +89,18 @@ func (core *Core) WriteMemory(address uint16, data byte) {
 	} else if (address >= 0xFEA0) && (address < 0xFEFF) {
 		// this area is restricted
 	} else if 0xFF04 == address {
+		//This register is incremented at rate of 16384Hz (~16779Hz on SGB).
+		//In CGB Double Speed Mode it is incremented twice as fast, ie. at 32768Hz.
+		//Writing any value to this register resets it to 00h.
 		core.Memory.MainMemory[0xFF04] = 0
 	} else if address == 0xFF07 {
+		//FF07 - TAC - Timer Control (R/W)
+		//  Bit 2    - Timer Stop  (0=Stop, 1=Start)
+		//  Bits 1-0 - Input Clock Select
+		//             00:   4096 Hz    (~4194 Hz SGB)
+		//             01: 262144 Hz  (~268400 Hz SGB)
+		//             10:  65536 Hz   (~67110 Hz SGB)
+		//             11:  16384 Hz   (~16780 Hz SGB)
 		currentFreq := core.GetClockFreq()
 		core.Memory.MainMemory[0xFF07] = data
 		newFreq := core.GetClockFreq()
@@ -116,4 +112,20 @@ func (core *Core) WriteMemory(address uint16, data byte) {
 		core.Memory.MainMemory[address] = data
 	}
 	log.Printf("Write to %X,data:%X\n", address, data)
+}
+
+/*
+	Push a word into stack and update SP
+*/
+func (core *Core) StackPush(val uint16) {
+	hi := val >> 8
+	lo := val & 0xFF
+	core.CPU.Registers.SP--
+	core.WriteMemory(core.CPU.Registers.SP, byte(hi))
+	core.CPU.Registers.SP--
+	core.WriteMemory(core.CPU.Registers.SP, byte(lo))
+
+	if core.Debug {
+		log.Printf("[Debug] Stack Push: %X, SP:%X", val, core.CPU.Registers.SP)
+	}
 }
