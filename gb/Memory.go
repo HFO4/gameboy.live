@@ -35,7 +35,8 @@ func (core *Core) initMemory() {
 	//Specify other register mapped in main memory according to http://bgb.bircd.org/pandocs.htm#powerupsequence
 	core.Memory.MainMemory[0xFF05] = 0x00
 	core.Memory.MainMemory[0xFF06] = 0x00
-	core.Memory.MainMemory[0xFF07] = 0x04
+	core.Memory.MainMemory[0xFF07] = 0x00
+	core.Memory.MainMemory[0xFF0F] = 0xE1
 	core.Memory.MainMemory[0xFF10] = 0x80
 	core.Memory.MainMemory[0xFF11] = 0xBF
 	core.Memory.MainMemory[0xFF12] = 0xF3
@@ -93,6 +94,16 @@ func (core *Core) WriteMemory(address uint16, data byte) {
 		//In CGB Double Speed Mode it is incremented twice as fast, ie. at 32768Hz.
 		//Writing any value to this register resets it to 00h.
 		core.Memory.MainMemory[0xFF04] = 0
+	} else if address == 0xFF44 {
+		//The LY indicates the vertical line to which the present data is
+		//transferred to the LCD Driver. The LY can take on any value between 0 through 153.
+		//The values between 144 and 153 indicate the V-Blank period. Writing will reset the counter.
+		core.Memory.MainMemory[0xFF44] = 0
+	} else if address == 0xFF46 {
+		//FF46 - DMA - DMA Transfer and Start Address (W)
+		//Writing to this register launches a DMA transfer from ROM or RAM to
+		//OAM memory (sprite attribute table).
+		core.DoDMA(data)
 	} else if address == 0xFF07 {
 		//FF07 - TAC - Timer Control (R/W)
 		//  Bit 2    - Timer Stop  (0=Stop, 1=Start)
@@ -111,7 +122,21 @@ func (core *Core) WriteMemory(address uint16, data byte) {
 	} else {
 		core.Memory.MainMemory[address] = data
 	}
-	log.Printf("Write to %X,data:%X\n", address, data)
+	//log.Printf("Write to %X,data:%X\n", address, data)
+}
+
+/*
+	Perform DMA transfer.
+	The written value specifies the transfer source address divided by 100h, ie. source & destination are:
+		Source:      XX00-XX9F   ;XX in range from 00-F1h
+		Destination: FE00-FE9F
+*/
+func (core *Core) DoDMA(data byte) {
+	// source address is data * 100
+	address := uint16(data) << 8
+	for i := 0; i < 0xA0; i++ {
+		core.WriteMemory(0xFE00+uint16(i), core.ReadMemory(address+uint16(i)))
+	}
 }
 
 /*

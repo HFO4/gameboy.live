@@ -1,6 +1,7 @@
 package gb
 
 import (
+	"fmt"
 	"github.com/HFO4/gbc-in-cloud/util"
 	"log"
 	"time"
@@ -26,6 +27,8 @@ type Core struct {
 	*/
 	//Debug mode
 	Debug bool
+	//Commands num to be executed in DEBUG mode
+	DebugControl int
 
 	/*
 		Timer
@@ -36,6 +39,7 @@ type Core struct {
 type Timer struct {
 	TimerCounter    int
 	DividerRegister int
+	ScalineCounter  int
 }
 
 func (core *Core) Init(romPath string) {
@@ -62,9 +66,16 @@ func (core *Core) Run() {
 func (core *Core) Update() {
 	cyclesThisUpdate := 0
 	for cyclesThisUpdate < (core.Clock+core.SpeedMultiple*core.Clock)/core.FPS {
-		cycles := 1
+		if core.Debug {
+			if core.DebugControl <= 0 {
+				fmt.Scanf("%d", &core.DebugControl)
+			}
+			core.DebugControl--
+		}
+		cycles := core.ExecuteNextOPCode()
 		cyclesThisUpdate += cycles
 		core.UpdateTimers(cycles)
+		core.UpdateGraphics(cycles)
 		core.Interrupt()
 	}
 	//log.Println("Render finish")
@@ -94,12 +105,13 @@ func (core *Core) Interrupt() {
 	Perform interrupt
 */
 func (core *Core) DoInterrupt(id int) {
-	//Turn of the Interrupt Master Enable Flag
+	//Turn off the Interrupt Master Enable Flag
 	core.CPU.Flags.InterruptMaster = false
+
 	req := core.ReadMemory(0xFF0F)
 	req = util.ClearBit(req, uint(id))
 	core.WriteMemory(0xFF0F, req)
-	/// we must save the current execution address by pushing it onto the stack
+	//We must save the current execution address by pushing it onto the stack
 	core.StackPush(core.CPU.Registers.PC)
 	//Set the PC to correspond interrupt process program:
 	// 	V-Blank: 0x40
