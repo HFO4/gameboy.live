@@ -11,6 +11,11 @@ var OPCodeFunctionMap = map[byte]OPCodeUnit{
 		Clock: 4,
 		OP:    "NOP",
 	},
+	byte(0x01): {
+		Func:  (*Core).OP01,
+		Clock: 12,
+		OP:    "LD BC,d16",
+	},
 	byte(0x05): {
 		Func:  (*Core).OP05,
 		Clock: 4,
@@ -20,6 +25,11 @@ var OPCodeFunctionMap = map[byte]OPCodeUnit{
 		Func:  (*Core).OP06,
 		Clock: 8,
 		OP:    "LD B,d8",
+	},
+	byte(0x0B): {
+		Func:  (*Core).OP0B,
+		Clock: 8,
+		OP:    "DEC BC",
 	},
 	byte(0x0C): {
 		Func:  (*Core).OP0C,
@@ -79,17 +89,34 @@ var OPCodeFunctionMap = map[byte]OPCodeUnit{
 		Clock: 8,
 		OP:    "LD A,d8",
 	},
+	//0X7_
+	byte(0x78): {
+		Func:  (*Core).OP78,
+		Clock: 4,
+		OP:    "LD A,B",
+	},
 	//0xA_
 	byte(0xAF): {
 		Func:  (*Core).OPAF,
 		Clock: 4,
 		OP:    "XOR A",
 	},
+	//0xB_
+	byte(0xB1): {
+		Func:  (*Core).OPB1,
+		Clock: 4,
+		OP:    "OR C",
+	},
 	//0xC_
 	byte(0xC3): {
 		Func:  (*Core).OPC3,
 		Clock: 16,
 		OP:    "JP a16",
+	},
+	byte(0xC9): {
+		Func:  (*Core).OPC9,
+		Clock: 16,
+		OP:    "RET",
 	},
 	byte(0xCD): {
 		Func:  (*Core).OPCD,
@@ -123,6 +150,11 @@ var OPCodeFunctionMap = map[byte]OPCodeUnit{
 		Clock: 4,
 		OP:    "DI",
 	},
+	byte(0xFB): {
+		Func:  (*Core).OPFB,
+		Clock: 4,
+		OP:    "EI",
+	},
 	byte(0xFE): {
 		Func:  (*Core).OPFE,
 		Clock: 8,
@@ -137,11 +169,65 @@ type OPCodeUnit struct {
 }
 
 /*
+	OP:0xFB EI
+*/
+func (core *Core) OPFB() int {
+	core.CPU.Flags.PendingInterruptEnabled = true
+	return 0
+}
+
+/*
+	OP:0xC9 RET
+*/
+func (core *Core) OPC9() int {
+	core.CPU.Registers.PC = core.StackPop()
+	return 0
+}
+
+/*
+	OP:0xB1 OR C
+*/
+func (core *Core) OPB1() int {
+	core.CPU.Registers.A = core.CPU.Registers.A | core.CPU.Registers.C
+	core.CPU.Flags.Zero = (core.CPU.Registers.A == 0)
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = false
+	core.CPU.Flags.Carry = false
+	core.CPU.updateAFLow()
+	return 0
+}
+
+/*
+	OP:0x78 LD A,B
+*/
+func (core *Core) OP78() int {
+	core.CPU.Registers.A = core.CPU.Registers.B
+	return 0
+}
+
+/*
+	OP:0x0B DEC BC
+*/
+func (core *Core) OP0B() int {
+	core.CPU.setBC(core.CPU.getBC() - 1)
+	return 0
+}
+
+/*
+	OP:0x01 LD BC,d16
+*/
+func (core *Core) OP01() int {
+	core.CPU.setBC(core.getParameter16())
+	return 0
+}
+
+/*
 	OP:0xCD CALL a16
 */
 func (core *Core) OPCD() int {
+	nextAddress := core.getParameter16()
 	core.StackPush(core.CPU.Registers.PC)
-	core.CPU.Registers.PC = core.getParameter16()
+	core.CPU.Registers.PC = nextAddress
 	return 0
 }
 

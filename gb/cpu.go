@@ -172,6 +172,14 @@ func (cpu *CPU) setAF(val uint16) {
 }
 
 /*
+	Set value of BC register
+*/
+func (cpu *CPU) setBC(val uint16) {
+	cpu.Registers.B = byte(val >> 8)
+	cpu.Registers.C = byte(val & 0xFF)
+}
+
+/*
 	Get value of BC register
 */
 func (cpu *CPU) getBC() uint16 {

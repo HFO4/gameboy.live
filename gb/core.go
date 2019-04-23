@@ -93,7 +93,6 @@ func (core *Core) Interrupt() {
 			for i := 0; i < 5; i++ {
 				if util.TestBit(req, uint(i)) {
 					if util.TestBit(enabled, uint(i)) {
-						log.Fatal("Do Interrupt")
 						core.DoInterrupt(i)
 					}
 				}

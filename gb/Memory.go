@@ -154,3 +154,13 @@ func (core *Core) StackPush(val uint16) {
 		log.Printf("[Debug] Stack Push: %X, SP:%X", val, core.CPU.Registers.SP)
 	}
 }
+
+/*
+	Pop a word into stack and update SP
+*/
+func (core *Core) StackPop() uint16 {
+	lo := core.ReadMemory(core.CPU.Registers.SP)
+	hi := core.ReadMemory(core.CPU.Registers.SP + 1)
+	core.CPU.Registers.SP += 2
+	return uint16(lo) + (uint16(hi) << 8)
+}
