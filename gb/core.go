@@ -67,11 +67,11 @@ func (core *Core) Update() {
 	cyclesThisUpdate := 0
 	for cyclesThisUpdate < (core.Clock+core.SpeedMultiple*core.Clock)/core.FPS {
 		if core.Debug {
-			if core.DebugControl <= 0 {
-				fmt.Scanf("%d", &core.DebugControl)
+			if uint16(core.DebugControl) == core.CPU.Registers.PC-1 {
+				fmt.Scanf("%X", &core.DebugControl)
 			}
-			core.DebugControl--
 		}
+		//TODO halt
 		cycles := core.ExecuteNextOPCode()
 		cyclesThisUpdate += cycles
 		core.UpdateTimers(cycles)
@@ -93,6 +93,7 @@ func (core *Core) Interrupt() {
 			for i := 0; i < 5; i++ {
 				if util.TestBit(req, uint(i)) {
 					if util.TestBit(enabled, uint(i)) {
+						log.Fatal("Do Interrupt")
 						core.DoInterrupt(i)
 					}
 				}

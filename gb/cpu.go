@@ -51,6 +51,9 @@ type Flags struct {
 	//  	0 - Disable all Interrupts
 	//  	1 - Enable all Interrupts that are enabled in IE Register (FFFF)
 	InterruptMaster bool
+
+	PendingInterruptDisabled bool
+	PendingInterruptEnabled  bool
 }
 
 func (core *Core) initCPU() {
@@ -107,9 +110,26 @@ func (core *Core) ExecuteOPCode(code byte) int {
 			lcdc := core.Memory.MainMemory[0xFF40]
 			IF := core.Memory.MainMemory[0xFF0F]
 			IE := core.Memory.MainMemory[0xFFFF]
-			log.Printf("[Debug] \n\033[34m[OP:%s]\nAF:%04X  BC:%04X  DE:%04X  HL:%04X  SP:%04X\nPC:%04X  LCDC:%02X  IF:%02X    IE:%02X \033[0m", OPCodeFunctionMap[code].OP, af, bc, de, hl, sp, pc, lcdc, IF, IE)
+			log.Printf("[Debug] \n\033[34m[OP:%s]\nAF:%04X  BC:%04X  DE:%04X  HL:%04X  SP:%04X\nPC:%04X  LCDC:%02X  IF:%02X    IE:%02X    IME:%t\033[0m", OPCodeFunctionMap[code].OP, af, bc, de, hl, sp, pc, lcdc, IF, IE, core.CPU.Flags.InterruptMaster)
 		}
 		extCycles := OPCodeFunctionMap[code].Func(core)
+
+		// we are trying to disable interupts, however interupts get disabled after the next instruction
+		// 0xF3 is the opcode for disabling interupt
+		if core.CPU.Flags.PendingInterruptDisabled {
+			if core.ReadMemory(core.CPU.Registers.PC-1) != 0xF3 {
+				core.CPU.Flags.PendingInterruptDisabled = false
+				core.CPU.Flags.InterruptMaster = false
+			}
+		}
+
+		if core.CPU.Flags.PendingInterruptEnabled {
+			if core.ReadMemory(core.CPU.Registers.PC-1) != 0xFB {
+				core.CPU.Flags.PendingInterruptEnabled = false
+				core.CPU.Flags.InterruptMaster = true
+			}
+		}
+
 		return OPCodeFunctionMap[code].Clock + extCycles
 	} else {
 		log.Fatalf("Unable to resolve OPCode:%X   PC:%X\n", code, core.CPU.Registers.PC-1)
@@ -195,5 +215,19 @@ func (cpu *CPU) updateAFLow() {
 	}
 
 	cpu.Registers.F = newAF
+
+}
+
+/*
+	Compare two values and set flags
+*/
+
+func (cpu *CPU) Compare(val1 byte, val2 byte) {
+	cpu.Flags.Zero = (val1 == val2)
+	cpu.Flags.Carry = (val1 > val2)
+	cpu.Flags.HalfCarry = ((val1 & 0x0f) > (val2 & 0x0f))
+	cpu.Flags.Sub = true
+
+	cpu.updateAFLow()
 
 }

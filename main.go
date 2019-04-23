@@ -26,9 +26,10 @@ func main() {
 	//fmt.Printf("%t",util.TestBit(t,3))
 	//fmt.Printf("%t\n",util.TestBit(t,4))
 	core := gb.Core{
-		FPS:   60,
-		Clock: 4194304,
-		Debug: true,
+		FPS:          60,
+		Clock:        4194304,
+		Debug:        true,
+		DebugControl: 255,
 	}
 	core.Init("G:\\LearnGo\\gb\\test.gb")
 	core.Run()
