@@ -84,10 +84,25 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		Clock: 8,
 		OP:    "LD (HL-),A",
 	},
+	byte(0x34): {
+		Func:  (*Core).OP34,
+		Clock: 12,
+		OP:    "INC (HL)",
+	},
 	byte(0x36): {
 		Func:  (*Core).OP36,
 		Clock: 12,
 		OP:    "LD (HL),d8",
+	},
+	byte(0x3C): {
+		Func:  (*Core).OP3C,
+		Clock: 4,
+		OP:    "INC A",
+	},
+	byte(0x3D): {
+		Func:  (*Core).OP3D,
+		Clock: 4,
+		OP:    "DEC A",
 	},
 	byte(0x3E): {
 		Func:  (*Core).OP3E,
@@ -158,6 +173,11 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		Clock: 8,
 		OP:    "RET NZ",
 	},
+	byte(0xC1): {
+		Func:  (*Core).OPC1,
+		Clock: 12,
+		OP:    "POP BC",
+	},
 	byte(0xC3): {
 		Func:  (*Core).OPC3,
 		Clock: 16,
@@ -167,6 +187,11 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		Func:  (*Core).OPC5,
 		Clock: 16,
 		OP:    "PUSH BC",
+	},
+	byte(0xC8): {
+		Func:  (*Core).OPC8,
+		Clock: 8,
+		OP:    "RET Z",
 	},
 	byte(0xC9): {
 		Func:  (*Core).OPC9,
@@ -179,16 +204,31 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		OP:    "CALL a16",
 	},
 	//0xD_
+	byte(0xD1): {
+		Func:  (*Core).OPD1,
+		Clock: 12,
+		OP:    "POP DE",
+	},
 	byte(0xD5): {
 		Func:  (*Core).OPD5,
 		Clock: 16,
 		OP:    "PUSH DE",
+	},
+	byte(0xD9): {
+		Func:  (*Core).OPD9,
+		Clock: 16,
+		OP:    "RETI",
 	},
 	//0xE_
 	byte(0xE0): {
 		Func:  (*Core).OPE0,
 		Clock: 12,
 		OP:    "LDH (a8),A",
+	},
+	byte(0xE1): {
+		Func:  (*Core).OPE1,
+		Clock: 12,
+		OP:    "POP HL",
 	},
 	byte(0xE2): {
 		Func:  (*Core).OPE2,
@@ -211,6 +251,11 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		Clock: 12,
 		OP:    "LDH A,(a8)",
 	},
+	byte(0xF1): {
+		Func:  (*Core).OPF1,
+		Clock: 12,
+		OP:    "POP AF",
+	},
 	byte(0xF3): {
 		Func:  (*Core).OPF3,
 		Clock: 4,
@@ -220,6 +265,11 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		Func:  (*Core).OPF5,
 		Clock: 16,
 		OP:    "PUSH AF",
+	},
+	byte(0xFA): {
+		Func:  (*Core).OPFA,
+		Clock: 16,
+		OP:    "LD A,(a16)",
 	},
 	byte(0xFB): {
 		Func:  (*Core).OPFB,
@@ -237,6 +287,111 @@ type OPCodeUnit struct {
 	Func  func(*Core) int
 	Clock int
 	OP    string
+}
+
+/*
+	OP:0xD9 RETI
+*/
+func (core *Core) OPD9() int {
+	core.CPU.Registers.PC = core.StackPop()
+	core.CPU.Flags.InterruptMaster = true
+	return 0
+}
+
+/*
+	OP:0xF1 POP AF
+*/
+func (core *Core) OPF1() int {
+	core.CPU.setAF(core.StackPop())
+	core.CPU.Flags.Zero = util.TestBit(core.CPU.Registers.F, 7)
+	core.CPU.Flags.Sub = util.TestBit(core.CPU.Registers.F, 6)
+	core.CPU.Flags.HalfCarry = util.TestBit(core.CPU.Registers.F, 5)
+	core.CPU.Flags.Carry = util.TestBit(core.CPU.Registers.F, 4)
+	return 0
+}
+
+/*
+	OP:0xC1 POP BC
+*/
+func (core *Core) OPC1() int {
+	core.CPU.setBC(core.StackPop())
+	return 0
+}
+
+/*
+	OP:0xD1 POP DE
+*/
+func (core *Core) OPD1() int {
+	core.CPU.setDE(core.StackPop())
+	return 0
+}
+
+/*
+	OP:0xE1 POP HL
+*/
+func (core *Core) OPE1() int {
+	core.CPU.Registers.HL = core.StackPop()
+	return 0
+}
+
+/*
+	OP:0x3C INC A
+*/
+func (core *Core) OP3C() int {
+	origin := core.CPU.Registers.A
+	newVal := origin + 1
+	core.CPU.Registers.A = newVal
+	core.CPU.Flags.Zero = (newVal == 0)
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = ((origin&0xF)+(1&0xF) > 0xF)
+	core.CPU.updateAFLow()
+	return 0
+}
+
+/*
+	OP:0x34 INC (HL)
+*/
+func (core *Core) OP34() int {
+	origin := core.ReadMemory(core.CPU.Registers.HL)
+	newVal := origin + 1
+	core.WriteMemory(core.CPU.Registers.HL, newVal)
+	core.CPU.Flags.Zero = (newVal == 0)
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = ((origin&0xF)+(1&0xF) > 0xF)
+	core.CPU.updateAFLow()
+	return 0
+}
+
+/*
+	OP:0x3D DEC A
+*/
+func (core *Core) OP3D() int {
+	origin := core.CPU.Registers.A
+	core.CPU.Registers.A--
+	core.CPU.Flags.Zero = (core.CPU.Registers.A == 0)
+	core.CPU.Flags.Sub = true
+	core.CPU.Flags.HalfCarry = (origin&0x0F == 0)
+	core.CPU.updateAFLow()
+	return 0
+}
+
+/*
+	OP:0xC8 RET Z
+*/
+func (core *Core) OPC8() int {
+	if core.CPU.Flags.Zero {
+		core.CPU.Registers.PC = core.StackPop()
+		return 12
+	}
+	return 0
+}
+
+/*
+	OP:0xC0 LD A,(a16)
+*/
+func (core *Core) OPFA() int {
+	core.CPU.Registers.A = core.ReadMemory(core.getParameter16())
+	return 0
 }
 
 /*

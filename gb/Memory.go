@@ -75,6 +75,20 @@ func (core *Core) ReadMemory(address uint16) byte {
 	} else if (address >= 0xA000) && (address <= 0xBFFF) {
 		// are we reading from ram memory bank?
 		return core.Cartridge.MBC.ReadRomBank(address)
+	} else if 0xFF00 == address {
+		// Read Joypad status
+		// FF00 - P1/JOYP - Joypad (R/W)
+		// The eight gameboy buttons/direction keys are arranged in form of a 2x4 matrix.
+		// Select either button or direction keys by writing to this register, then read-out bit 0-3.
+		//  Bit 7 - Not used
+		//  Bit 6 - Not used
+		//  Bit 5 - P15 Select Button Keys      (0=Select)
+		//  Bit 4 - P14 Select Direction Keys   (0=Select)
+		//  Bit 3 - P13 Input Down  or Start    (0=Pressed) (Read Only)
+		//  Bit 2 - P12 Input Up    or Select   (0=Pressed) (Read Only)
+		//  Bit 1 - P11 Input Left  or Button B (0=Pressed) (Read Only)
+		//  Bit 0 - P10 Input Right or Button A (0=Pressed) (Read Only)
+		return 0xEF
 	}
 	return core.Memory.MainMemory[address]
 }
@@ -90,22 +104,22 @@ func (core *Core) WriteMemory(address uint16, data byte) {
 	} else if (address >= 0xFEA0) && (address < 0xFEFF) {
 		// this area is restricted
 	} else if 0xFF04 == address {
-		//This register is incremented at rate of 16384Hz (~16779Hz on SGB).
-		//In CGB Double Speed Mode it is incremented twice as fast, ie. at 32768Hz.
-		//Writing any value to this register resets it to 00h.
+		// This register is incremented at rate of 16384Hz (~16779Hz on SGB).
+		// In CGB Double Speed Mode it is incremented twice as fast, ie. at 32768Hz.
+		// Writing any value to this register resets it to 00h.
 		core.Memory.MainMemory[0xFF04] = 0
 	} else if address == 0xFF44 {
-		//The LY indicates the vertical line to which the present data is
-		//transferred to the LCD Driver. The LY can take on any value between 0 through 153.
-		//The values between 144 and 153 indicate the V-Blank period. Writing will reset the counter.
+		// The LY indicates the vertical line to which the present data is
+		// transferred to the LCD Driver. The LY can take on any value between 0 through 153.
+		// The values between 144 and 153 indicate the V-Blank period. Writing will reset the counter.
 		core.Memory.MainMemory[0xFF44] = 0
 	} else if address == 0xFF46 {
-		//FF46 - DMA - DMA Transfer and Start Address (W)
-		//Writing to this register launches a DMA transfer from ROM or RAM to
-		//OAM memory (sprite attribute table).
+		// FF46 - DMA - DMA Transfer and Start Address (W)
+		// Writing to this register launches a DMA transfer from ROM or RAM to
+		// OAM memory (sprite attribute table).
 		core.DoDMA(data)
 	} else if address == 0xFF07 {
-		//FF07 - TAC - Timer Control (R/W)
+		// FF07 - TAC - Timer Control (R/W)
 		//  Bit 2    - Timer Stop  (0=Stop, 1=Start)
 		//  Bits 1-0 - Input Clock Select
 		//             00:   4096 Hz    (~4194 Hz SGB)

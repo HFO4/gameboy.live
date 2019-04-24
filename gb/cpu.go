@@ -180,6 +180,14 @@ func (cpu *CPU) setBC(val uint16) {
 }
 
 /*
+	Set value of DE register
+*/
+func (cpu *CPU) setDE(val uint16) {
+	cpu.Registers.D = byte(val >> 8)
+	cpu.Registers.E = byte(val & 0xFF)
+}
+
+/*
 	Get value of BC register
 */
 func (cpu *CPU) getBC() uint16 {
