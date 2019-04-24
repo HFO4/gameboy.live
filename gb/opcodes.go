@@ -4,7 +4,7 @@ import (
 	"github.com/HFO4/gbc-in-cloud/util"
 )
 
-var OPCodeFunctionMap = map[byte]OPCodeUnit{
+var OPCodeFunctionMap = [0x100]OPCodeUnit{
 	//0x0_
 	byte(0x00): {
 		Func:  (*Core).OP00,
@@ -63,6 +63,11 @@ var OPCodeFunctionMap = map[byte]OPCodeUnit{
 		Clock: 12,
 		OP:    "LD HL,d16",
 	},
+	byte(0x28): {
+		Func:  (*Core).OP28,
+		Clock: 8,
+		OP:    "JR Z,r8",
+	},
 	byte(0x2A): {
 		Func:  (*Core).OP2A,
 		Clock: 8,
@@ -101,6 +106,46 @@ var OPCodeFunctionMap = map[byte]OPCodeUnit{
 		Clock: 4,
 		OP:    "XOR A",
 	},
+	byte(0xA0): {
+		Func:  (*Core).OPA0,
+		Clock: 4,
+		OP:    "AND B",
+	},
+	byte(0xA1): {
+		Func:  (*Core).OPA1,
+		Clock: 4,
+		OP:    "AND C",
+	},
+	byte(0xA2): {
+		Func:  (*Core).OPA2,
+		Clock: 4,
+		OP:    "AND D",
+	},
+	byte(0xA3): {
+		Func:  (*Core).OPA3,
+		Clock: 4,
+		OP:    "AND E",
+	},
+	byte(0xA4): {
+		Func:  (*Core).OPA4,
+		Clock: 4,
+		OP:    "AND H",
+	},
+	byte(0xA5): {
+		Func:  (*Core).OPA5,
+		Clock: 4,
+		OP:    "AND L",
+	},
+	byte(0xA6): {
+		Func:  (*Core).OPA6,
+		Clock: 4,
+		OP:    "AND (HL)",
+	},
+	byte(0xA7): {
+		Func:  (*Core).OPA7,
+		Clock: 4,
+		OP:    "AND A",
+	},
 	//0xB_
 	byte(0xB1): {
 		Func:  (*Core).OPB1,
@@ -108,10 +153,20 @@ var OPCodeFunctionMap = map[byte]OPCodeUnit{
 		OP:    "OR C",
 	},
 	//0xC_
+	byte(0xC0): {
+		Func:  (*Core).OPC0,
+		Clock: 8,
+		OP:    "RET NZ",
+	},
 	byte(0xC3): {
 		Func:  (*Core).OPC3,
 		Clock: 16,
 		OP:    "JP a16",
+	},
+	byte(0xC5): {
+		Func:  (*Core).OPC5,
+		Clock: 16,
+		OP:    "PUSH BC",
 	},
 	byte(0xC9): {
 		Func:  (*Core).OPC9,
@@ -123,6 +178,12 @@ var OPCodeFunctionMap = map[byte]OPCodeUnit{
 		Clock: 24,
 		OP:    "CALL a16",
 	},
+	//0xD_
+	byte(0xD5): {
+		Func:  (*Core).OPD5,
+		Clock: 16,
+		OP:    "PUSH DE",
+	},
 	//0xE_
 	byte(0xE0): {
 		Func:  (*Core).OPE0,
@@ -133,6 +194,11 @@ var OPCodeFunctionMap = map[byte]OPCodeUnit{
 		Func:  (*Core).OPE2,
 		Clock: 8,
 		OP:    "LD (C),A",
+	},
+	byte(0xE5): {
+		Func:  (*Core).OPE5,
+		Clock: 16,
+		OP:    "PUSH HL",
 	},
 	byte(0xEA): {
 		Func:  (*Core).OPEA,
@@ -150,6 +216,11 @@ var OPCodeFunctionMap = map[byte]OPCodeUnit{
 		Clock: 4,
 		OP:    "DI",
 	},
+	byte(0xF5): {
+		Func:  (*Core).OPF5,
+		Clock: 16,
+		OP:    "PUSH AF",
+	},
 	byte(0xFB): {
 		Func:  (*Core).OPFB,
 		Clock: 4,
@@ -166,6 +237,165 @@ type OPCodeUnit struct {
 	Func  func(*Core) int
 	Clock int
 	OP    string
+}
+
+/*
+	OP:0xC0 RET NZ
+*/
+func (core *Core) OPC0() int {
+	if !core.CPU.Flags.Zero {
+		core.CPU.Registers.PC = core.StackPop()
+		return 12
+	}
+	return 0
+}
+
+/*
+	OP:0x28 JR Z,r8
+*/
+func (core *Core) OP28() int {
+	address := int8(core.getParameter8())
+	if core.CPU.Flags.Zero {
+		core.CPU.Registers.PC = uint16(int32(core.CPU.Registers.PC) + int32(address))
+		return 4
+	}
+	return 0
+}
+
+/*
+	OP:0xA6 AND (HL)
+*/
+func (core *Core) OPA6() int {
+	core.CPU.Registers.A = core.ReadMemory(core.CPU.Registers.HL) & core.CPU.Registers.A
+	core.CPU.Flags.Zero = (core.CPU.Registers.A == 0)
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = true
+	core.CPU.Flags.Carry = false
+	core.CPU.updateAFLow()
+	return 0
+}
+
+/*
+	OP:0xA5 AND L
+*/
+func (core *Core) OPA5() int {
+	core.CPU.Registers.A = byte(core.CPU.Registers.HL&0xFF) & core.CPU.Registers.A
+	core.CPU.Flags.Zero = (core.CPU.Registers.A == 0)
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = true
+	core.CPU.Flags.Carry = false
+	core.CPU.updateAFLow()
+	return 0
+}
+
+/*
+	OP:0xA4 AND H
+*/
+func (core *Core) OPA4() int {
+	core.CPU.Registers.A = byte(core.CPU.Registers.HL>>8) & core.CPU.Registers.A
+	core.CPU.Flags.Zero = (core.CPU.Registers.A == 0)
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = true
+	core.CPU.Flags.Carry = false
+	core.CPU.updateAFLow()
+	return 0
+}
+
+/*
+	OP:0xA3 AND E
+*/
+func (core *Core) OPA3() int {
+	core.CPU.Registers.A = core.CPU.Registers.E & core.CPU.Registers.A
+	core.CPU.Flags.Zero = (core.CPU.Registers.A == 0)
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = true
+	core.CPU.Flags.Carry = false
+	core.CPU.updateAFLow()
+	return 0
+}
+
+/*
+	OP:0xA2 AND D
+*/
+func (core *Core) OPA2() int {
+	core.CPU.Registers.A = core.CPU.Registers.D & core.CPU.Registers.A
+	core.CPU.Flags.Zero = (core.CPU.Registers.A == 0)
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = true
+	core.CPU.Flags.Carry = false
+	core.CPU.updateAFLow()
+	return 0
+}
+
+/*
+	OP:0xA1 AND C
+*/
+func (core *Core) OPA1() int {
+	core.CPU.Registers.A = core.CPU.Registers.C & core.CPU.Registers.A
+	core.CPU.Flags.Zero = (core.CPU.Registers.A == 0)
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = true
+	core.CPU.Flags.Carry = false
+	core.CPU.updateAFLow()
+	return 0
+}
+
+/*
+	OP:0xA0 AND B
+*/
+func (core *Core) OPA0() int {
+	core.CPU.Registers.A = core.CPU.Registers.B & core.CPU.Registers.A
+	core.CPU.Flags.Zero = (core.CPU.Registers.A == 0)
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = true
+	core.CPU.Flags.Carry = false
+	core.CPU.updateAFLow()
+	return 0
+}
+
+/*
+	OP:0xA7 AND A
+*/
+func (core *Core) OPA7() int {
+	core.CPU.Registers.A = core.CPU.Registers.A & core.CPU.Registers.A
+	core.CPU.Flags.Zero = (core.CPU.Registers.A == 0)
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = true
+	core.CPU.Flags.Carry = false
+	core.CPU.updateAFLow()
+	return 0
+}
+
+/*
+	OP:0xE5 PUSH HL
+*/
+func (core *Core) OPE5() int {
+	core.StackPush(core.CPU.Registers.HL)
+	return 0
+}
+
+/*
+	OP:0xD5 PUSH DE
+*/
+func (core *Core) OPD5() int {
+	core.StackPush(core.CPU.getDE())
+	return 0
+}
+
+/*
+	OP:0xC5 PUSH BC
+*/
+func (core *Core) OPC5() int {
+	core.StackPush(core.CPU.getBC())
+	return 0
+}
+
+/*
+	OP:0xF5 PUSH AF
+*/
+func (core *Core) OPF5() int {
+	core.StackPush(core.CPU.getAF())
+	return 0
 }
 
 /*
@@ -289,7 +519,7 @@ func (core *Core) OP36() int {
 	OP:0xFE CP d8
 */
 func (core *Core) OPFE() int {
-	core.CPU.Compare(core.CPU.Registers.A, core.getParameter8())
+	core.CPU.Compare(core.getParameter8(), core.CPU.Registers.A)
 	return 0
 }
 

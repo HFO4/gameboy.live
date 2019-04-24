@@ -99,7 +99,7 @@ func (core *Core) ExecuteNextOPCode() int {
 	Execute given OPCode and return used CPU clock
 */
 func (core *Core) ExecuteOPCode(code byte) int {
-	if _, ok := OPCodeFunctionMap[code]; ok {
+	if OPCodeFunctionMap[code].Clock != 0 {
 		if core.Debug {
 			af := core.CPU.getAF()
 			bc := core.CPU.getBC()
