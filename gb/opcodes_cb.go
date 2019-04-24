@@ -1,5 +1,7 @@
 package gb
 
+import "github.com/HFO4/gbc-in-cloud/util"
+
 var cbMap = [0x100](func()){}
 
 var CBCycles = []int{
@@ -61,6 +63,35 @@ func (core *Core) initCB() {
 		cbMap[0x30+i] = func() {
 			core.SWAP(getters[registerID], setters[registerID])
 		}
+
+		/*
+			RES commands
+		*/
+		cbMap[0x80+i] = func() {
+			setters[registerID](util.ClearBit(getters[registerID](), 0))
+		}
+		cbMap[0x88+i] = func() {
+			setters[registerID](util.ClearBit(getters[registerID](), 1))
+		}
+		cbMap[0x90+i] = func() {
+			setters[registerID](util.ClearBit(getters[registerID](), 2))
+		}
+		cbMap[0x98+i] = func() {
+			setters[registerID](util.ClearBit(getters[registerID](), 3))
+		}
+		cbMap[0xA0+i] = func() {
+			setters[registerID](util.ClearBit(getters[registerID](), 4))
+		}
+		cbMap[0xA8+i] = func() {
+			setters[registerID](util.ClearBit(getters[registerID](), 5))
+		}
+		cbMap[0xB0+i] = func() {
+			setters[registerID](util.ClearBit(getters[registerID](), 6))
+		}
+		cbMap[0xB8+i] = func() {
+			setters[registerID](util.ClearBit(getters[registerID](), 7))
+		}
+
 	}
 }
 
