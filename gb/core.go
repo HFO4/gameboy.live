@@ -51,6 +51,7 @@ func (core *Core) Init(romPath string) {
 	core.initRom(romPath)
 	core.initMemory()
 	core.initCPU()
+	core.initCB()
 }
 
 func (core *Core) Run() {

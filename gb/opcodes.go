@@ -2,6 +2,7 @@ package gb
 
 import (
 	"github.com/HFO4/gbc-in-cloud/util"
+	"log"
 )
 
 var OPCodeFunctionMap = [0x100]OPCodeUnit{
@@ -73,6 +74,11 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		Clock: 8,
 		OP:    "LD A,(HL+)",
 	},
+	byte(0x2F): {
+		Func:  (*Core).OP2F,
+		Clock: 4,
+		OP:    "CPL",
+	},
 	//0x3_
 	byte(0x31): {
 		Func:  (*Core).OP31,
@@ -108,6 +114,17 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		Func:  (*Core).OP3E,
 		Clock: 8,
 		OP:    "LD A,d8",
+	},
+	//0x4_
+	byte(0x47): {
+		Func:  (*Core).OP47,
+		Clock: 4,
+		OP:    "LD B,A",
+	},
+	byte(0x4F): {
+		Func:  (*Core).OP4F,
+		Clock: 4,
+		OP:    "LD C,A",
 	},
 	//0X7_
 	byte(0x78): {
@@ -161,7 +178,17 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		Clock: 4,
 		OP:    "AND A",
 	},
+	byte(0xA9): {
+		Func:  (*Core).OPA9,
+		Clock: 4,
+		OP:    "XOR C",
+	},
 	//0xB_
+	byte(0xB0): {
+		Func:  (*Core).OPB0,
+		Clock: 4,
+		OP:    "OR B",
+	},
 	byte(0xB1): {
 		Func:  (*Core).OPB1,
 		Clock: 4,
@@ -197,6 +224,11 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		Func:  (*Core).OPC9,
 		Clock: 16,
 		OP:    "RET",
+	},
+	byte(0xCB): {
+		Func:  (*Core).OPCB,
+		Clock: 4,
+		OP:    "PERFIX CB",
 	},
 	byte(0xCD): {
 		Func:  (*Core).OPCD,
@@ -239,6 +271,11 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		Func:  (*Core).OPE5,
 		Clock: 16,
 		OP:    "PUSH HL",
+	},
+	byte(0xE6): {
+		Func:  (*Core).OPE6,
+		Clock: 8,
+		OP:    "AND d8",
 	},
 	byte(0xEA): {
 		Func:  (*Core).OPEA,
@@ -287,6 +324,87 @@ type OPCodeUnit struct {
 	Func  func(*Core) int
 	Clock int
 	OP    string
+}
+
+/*
+	OP:0xA9 XOR C
+*/
+func (core *Core) OPA9() int {
+	core.CPU.Registers.A = core.CPU.Registers.C ^ core.CPU.Registers.A
+	core.CPU.Flags.Zero = core.CPU.Registers.A == 0
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = false
+	core.CPU.Flags.Carry = false
+	core.CPU.updateAFLow()
+	return 0
+}
+
+/*
+	OP:0x4F LD C,A
+*/
+func (core *Core) OP4F() int {
+	core.CPU.Registers.C = core.CPU.Registers.A
+	return 0
+}
+
+/*
+	OP:0xB0 OR B
+*/
+func (core *Core) OPB0() int {
+	core.CPU.Registers.B = core.CPU.Registers.A | core.CPU.Registers.B
+	core.CPU.Flags.Zero = (core.CPU.Registers.B == 0)
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = false
+	core.CPU.Flags.Carry = false
+	core.CPU.updateAFLow()
+	return 0
+}
+
+/*
+	OP:0x47 LD B,A
+*/
+func (core *Core) OP47() int {
+	core.CPU.Registers.B = core.CPU.Registers.A
+	return 0
+}
+
+/*
+	OP:0xCB PREFIX CB
+*/
+func (core *Core) OPCB() int {
+	nextIns := core.getParameter8()
+	if cbMap[nextIns] != nil {
+		cbMap[nextIns]()
+		return CBCycles[nextIns] * 4
+	} else {
+		log.Fatalf("Undefined CB Opcode: %X \n", nextIns)
+	}
+	return 0
+}
+
+/*
+	OP:0xE6 AND d8
+*/
+func (core *Core) OPE6() int {
+	val := core.getParameter8()
+	core.CPU.Registers.A = core.CPU.Registers.A & val
+	core.CPU.Flags.Zero = (core.CPU.Registers.A == 0)
+	core.CPU.Flags.HalfCarry = true
+	core.CPU.Flags.Carry = false
+	core.CPU.Flags.Sub = false
+	core.CPU.updateAFLow()
+	return 0
+}
+
+/*
+	OP:0x2F CPL
+*/
+func (core *Core) OP2F() int {
+	core.CPU.Registers.A = 0XFF ^ core.CPU.Registers.A
+	core.CPU.Flags.Sub = true
+	core.CPU.Flags.HalfCarry = true
+	core.CPU.updateAFLow()
+	return 0
 }
 
 /*

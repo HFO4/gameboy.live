@@ -148,6 +148,57 @@ func (core *Core) getParameter16() uint16 {
 }
 
 /*
+	Set value of register A
+*/
+func (core *Core) setA(val byte) {
+	core.CPU.Registers.A = val
+}
+
+/*
+	Set value of register B
+*/
+func (core *Core) setB(val byte) {
+	core.CPU.Registers.B = val
+}
+
+/*
+	Set value of register C
+*/
+func (core *Core) setC(val byte) {
+	core.CPU.Registers.C = val
+}
+
+/*
+	Set value of register D
+*/
+func (core *Core) setD(val byte) {
+	core.CPU.Registers.D = val
+}
+
+/*
+	Set value of register D
+*/
+func (core *Core) setE(val byte) {
+	core.CPU.Registers.E = val
+}
+
+/*
+	Set value of register H
+*/
+func (core *Core) setH(val byte) {
+	core.CPU.Registers.HL &= 0x00FF
+	core.CPU.Registers.HL |= ((uint16(val) << 8) & 0xFF00) // OR in the desired mask
+}
+
+/*
+	Set value of register L
+*/
+func (core *Core) setL(val byte) {
+	core.CPU.Registers.HL &= 0xFF00
+	core.CPU.Registers.HL |= (uint16(val) & 0x00FF) // OR in the desired mask
+}
+
+/*
 	Get 8bit parameter after opcode
 */
 func (core *Core) getParameter8() byte {
