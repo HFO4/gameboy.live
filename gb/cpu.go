@@ -2,6 +2,7 @@ package gb
 
 import (
 	"github.com/HFO4/gbc-in-cloud/util"
+	"io/ioutil"
 	"log"
 )
 
@@ -132,6 +133,10 @@ func (core *Core) ExecuteOPCode(code byte) int {
 
 		return OPCodeFunctionMap[code].Clock + extCycles
 	} else {
+		err := ioutil.WriteFile("G:\\LearnGo\\gb\\memory.dump", core.Memory.MainMemory[:], 0644)
+		if err != nil {
+			panic(err)
+		}
 		log.Fatalf("Unable to resolve OPCode:%X   PC:%X\n", code, core.CPU.Registers.PC-1)
 		return 0
 	}

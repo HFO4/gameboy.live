@@ -13,3 +13,5 @@
 .idea
 *.gb
 *.gbc
+*.dump
+*.sav
