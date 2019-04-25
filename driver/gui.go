@@ -23,8 +23,8 @@ func (lcd *LCD) Init(pixels *[160][144][3]uint8) {
 
 func (lcd *LCD) Run(drawSignal chan bool) {
 	cfg := pixelgl.WindowConfig{
-		Title:  "TETRIS",
-		Bounds: pixel.R(0, 0, 160, 144),
+		Title:  "TETRIS [FPS:60] [CLOCK:4194304]",
+		Bounds: pixel.R(0, 0, 160*3, 144*3),
 		VSync:  true,
 	}
 	win, err := pixelgl.NewWindow(cfg)
@@ -49,7 +49,10 @@ func (lcd *LCD) Run(drawSignal chan bool) {
 		}
 
 		graph := pixel.NewSprite(pixel.Picture(lcd.pixelMap), pixel.R(0, 0, 160, 144))
-		graph.Draw(lcd.window, pixel.IM.Moved(win.Bounds().Center()))
+		mat := pixel.IM
+		mat = mat.Moved(win.Bounds().Center())
+		mat = mat.ScaledXY(win.Bounds().Center(), pixel.V(3, 3))
+		graph.Draw(lcd.window, mat)
 		win.Update()
 	}
 

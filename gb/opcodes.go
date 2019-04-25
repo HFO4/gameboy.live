@@ -17,6 +17,11 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		Clock: 12,
 		OP:    "LD BC,d16",
 	},
+	byte(0x03): {
+		Func:  (*Core).OP03,
+		Clock: 8,
+		OP:    "INC BC",
+	},
 	byte(0x05): {
 		Func:  (*Core).OP05,
 		Clock: 4,
@@ -27,10 +32,20 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		Clock: 8,
 		OP:    "LD B,d8",
 	},
+	byte(0x09): {
+		Func:  (*Core).OP09,
+		Clock: 8,
+		OP:    "ADD HL,BC",
+	},
 	byte(0x0B): {
 		Func:  (*Core).OP0B,
 		Clock: 8,
 		OP:    "DEC BC",
+	},
+	byte(0x0A): {
+		Func:  (*Core).OP0A,
+		Clock: 8,
+		OP:    "LD A,(BC)",
 	},
 	byte(0x0C): {
 		Func:  (*Core).OP0C,
@@ -160,6 +175,11 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		Clock: 12,
 		OP:    "DEC (HL)",
 	},
+	byte(0x3A): {
+		Func:  (*Core).OP3A,
+		Clock: 8,
+		OP:    "LD A,(HL-)",
+	},
 	byte(0x3C): {
 		Func:  (*Core).OP3C,
 		Clock: 4,
@@ -176,10 +196,20 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		OP:    "LD A,d8",
 	},
 	//0x4_
+	byte(0x46): {
+		Func:  (*Core).OP46,
+		Clock: 8,
+		OP:    "LD B,(HL)",
+	},
 	byte(0x47): {
 		Func:  (*Core).OP47,
 		Clock: 4,
 		OP:    "LD B,A",
+	},
+	byte(0x4E): {
+		Func:  (*Core).OP4E,
+		Clock: 8,
+		OP:    "LD C,(HL)",
 	},
 	byte(0x4F): {
 		Func:  (*Core).OP4F,
@@ -192,6 +222,11 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		Clock: 8,
 		OP:    "LD D,(HL)",
 	},
+	byte(0x57): {
+		Func:  (*Core).OP57,
+		Clock: 4,
+		OP:    "LD D,A",
+	},
 	byte(0x5E): {
 		Func:  (*Core).OP5E,
 		Clock: 8,
@@ -202,7 +237,43 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		Clock: 4,
 		OP:    "LD E,A",
 	},
+	//0X6_
+	byte(0x60): {
+		Func:  (*Core).OP60,
+		Clock: 4,
+		OP:    "LD H,B",
+	},
+	byte(0x69): {
+		Func:  (*Core).OP69,
+		Clock: 4,
+		OP:    "LD L,C",
+	},
+	byte(0x6F): {
+		Func:  (*Core).OP6F,
+		Clock: 4,
+		OP:    "LD L,A",
+	},
 	//0X7_
+	byte(0x71): {
+		Func:  (*Core).OP71,
+		Clock: 8,
+		OP:    "LD (HL),C",
+	},
+	byte(0x72): {
+		Func:  (*Core).OP72,
+		Clock: 8,
+		OP:    "LD (HL),D",
+	},
+	byte(0x73): {
+		Func:  (*Core).OP73,
+		Clock: 8,
+		OP:    "LD (HL),E",
+	},
+	byte(0x77): {
+		Func:  (*Core).OP77,
+		Clock: 8,
+		OP:    "LD (HL),A",
+	},
 	byte(0x78): {
 		Func:  (*Core).OP78,
 		Clock: 4,
@@ -212,6 +283,16 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		Func:  (*Core).OP79,
 		Clock: 4,
 		OP:    "LD A,C",
+	},
+	byte(0x7A): {
+		Func:  (*Core).OP7A,
+		Clock: 4,
+		OP:    "LD A,D",
+	},
+	byte(0x7B): {
+		Func:  (*Core).OP7B,
+		Clock: 4,
+		OP:    "LD A,E",
 	},
 	byte(0x7C): {
 		Func:  (*Core).OP7C,
@@ -224,6 +305,11 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		OP:    "LD A,(HL)",
 	},
 	//0x8_
+	byte(0x85): {
+		Func:  (*Core).OP85,
+		Clock: 4,
+		OP:    "ADD A,L",
+	},
 	byte(0x87): {
 		Func:  (*Core).OP87,
 		Clock: 4,
@@ -301,6 +387,11 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 		Func:  (*Core).OPC1,
 		Clock: 12,
 		OP:    "POP BC",
+	},
+	byte(0xC2): {
+		Func:  (*Core).OPC2,
+		Clock: 12,
+		OP:    "JP NZ,a16",
 	},
 	byte(0xC3): {
 		Func:  (*Core).OPC3,
@@ -439,6 +530,170 @@ type OPCodeUnit struct {
 }
 
 /*
+	OP:0x71 LD (HL),C
+*/
+func (core *Core) OP71() int {
+	core.WriteMemory(core.CPU.Registers.HL, core.CPU.Registers.C)
+	return 0
+}
+
+/*
+	OP:0x72 LD (HL),D
+*/
+func (core *Core) OP72() int {
+	core.WriteMemory(core.CPU.Registers.HL, core.CPU.Registers.D)
+	return 0
+}
+
+/*
+	OP:0x73 LD (HL),E
+*/
+func (core *Core) OP73() int {
+	core.WriteMemory(core.CPU.Registers.HL, core.CPU.Registers.E)
+	return 0
+}
+
+/*
+	OP:0x7A LD A,D
+*/
+func (core *Core) OP7A() int {
+	core.CPU.Registers.A = core.CPU.Registers.D
+	return 0
+}
+
+/*
+	OP:0x7B LD A,E
+*/
+func (core *Core) OP7B() int {
+	core.CPU.Registers.A = core.CPU.Registers.E
+	return 0
+}
+
+/*
+	OP:0x57 LD D,A
+*/
+func (core *Core) OP57() int {
+	core.CPU.Registers.D = core.CPU.Registers.A
+	return 0
+}
+
+/*
+	OP:0x3A LD A,(HL-)
+*/
+func (core *Core) OP3A() int {
+	core.CPU.Registers.A = core.ReadMemory(core.CPU.Registers.HL)
+	core.CPU.Registers.HL--
+	return 0
+}
+
+/*
+	OP:0xC2 JP NZ,a16
+*/
+func (core *Core) OPC2() int {
+	address := core.getParameter16()
+	if !core.CPU.Flags.Zero {
+		core.CPU.Registers.PC = address
+		return 4
+	}
+	return 0
+}
+
+/*
+	OP:0x6F LD L,A
+*/
+func (core *Core) OP6F() int {
+	core.setL(core.CPU.Registers.A)
+	return 0
+}
+
+/*
+	OP:0x85 ADD A,L
+*/
+func (core *Core) OP85() int {
+	origin1 := core.CPU.Registers.A
+	origin2 := byte(core.CPU.Registers.HL & 0xFF)
+	res := int16(core.CPU.Registers.A) + int16(core.CPU.Registers.HL&0xFF)
+	core.CPU.Registers.A = byte(res)
+	core.CPU.Flags.Zero = res == 0
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = (origin1&0xF)+(origin2&0xF) > 0xF
+	core.CPU.Flags.Carry = res > 0xFF
+	core.CPU.updateAFLow()
+	return 0
+}
+
+/*
+	OP:0x03 INC BC
+*/
+func (core *Core) OP03() int {
+	core.CPU.setBC(core.CPU.getBC() + 1)
+	return 0
+}
+
+/*
+	OP:0x0A LD A,(BC)
+*/
+func (core *Core) OP0A() int {
+	core.CPU.Registers.A = core.ReadMemory(core.CPU.getBC())
+	return 0
+}
+
+/*
+	OP:0x60 LD H,B
+*/
+func (core *Core) OP60() int {
+	core.setH(core.CPU.Registers.B)
+	return 0
+}
+
+/*
+	OP:0x69 LD L,C
+*/
+func (core *Core) OP69() int {
+	core.setL(core.CPU.Registers.C)
+	return 0
+}
+
+/*
+	OP:0x46 LD B,(HL)
+*/
+func (core *Core) OP46() int {
+	core.CPU.Registers.B = core.ReadMemory(core.CPU.Registers.HL)
+	return 0
+}
+
+/*
+	OP:0x4E LD C,(HL)
+*/
+func (core *Core) OP4E() int {
+	core.CPU.Registers.C = core.ReadMemory(core.CPU.Registers.HL)
+	return 0
+}
+
+/*
+	OP:0x09 ADD HL,BC
+*/
+func (core *Core) OP09() int {
+	originHL := core.CPU.Registers.HL
+	originBC := core.CPU.getBC()
+	res := int32(originBC) + int32(originHL)
+	core.CPU.Registers.HL = uint16(res)
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = int32(originHL&0xFFF) > (res & 0xFFF)
+	core.CPU.Flags.Carry = res > 0xFFFF
+	core.CPU.updateAFLow()
+	return 0
+}
+
+/*
+	OP:0x77 LD (HL),A
+*/
+func (core *Core) OP77() int {
+	core.WriteMemory(core.CPU.Registers.HL, core.CPU.Registers.A)
+	return 0
+}
+
+/*
 	OP:0x2C INC L
 */
 func (core *Core) OP2C() int {
@@ -460,7 +715,7 @@ func (core *Core) OP35() int {
 	newVal := origin - 1
 	core.WriteMemory(core.CPU.Registers.HL, newVal)
 	core.CPU.Flags.Zero = (newVal == 0)
-	core.CPU.Flags.Sub = false
+	core.CPU.Flags.Sub = true
 	core.CPU.Flags.HalfCarry = ((origin&0xF)+(1&0xF) > 0xF)
 	core.CPU.updateAFLow()
 	return 0

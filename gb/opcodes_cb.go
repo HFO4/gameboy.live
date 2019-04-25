@@ -60,6 +60,10 @@ func (core *Core) initCB() {
 			core.RRC(getters[registerID], setters[registerID])
 		}
 
+		cbMap[0x20+i] = func() {
+			core.SLA(getters[registerID], setters[registerID])
+		}
+
 		cbMap[0x30+i] = func() {
 			core.SWAP(getters[registerID], setters[registerID])
 		}
@@ -93,6 +97,19 @@ func (core *Core) initCB() {
 		}
 
 	}
+}
+
+func (core *Core) SLA(getter func() byte, setter func(byte)) {
+	val := getter()
+	carry := val >> 7
+	res := (val << 1) & 0xFF
+	setter(res)
+
+	core.CPU.Flags.Zero = (res == 0)
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = false
+	core.CPU.Flags.Carry = (carry == 1)
+	core.CPU.updateAFLow()
 }
 
 func (core *Core) RLC(getter func() byte, setter func(byte)) {

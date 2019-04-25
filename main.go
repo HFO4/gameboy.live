@@ -40,6 +40,7 @@ func run() {
 		DebugControl:  255,
 		DisplayDriver: &driver.LCD{},
 		DrawSignal:    make(chan bool),
+		SpeedMultiple: 0,
 	}
 	core.Init("G:\\LearnGo\\gb\\test.gb")
 	go core.DisplayDriver.Run(core.DrawSignal)

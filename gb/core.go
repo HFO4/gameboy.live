@@ -1,7 +1,6 @@
 package gb
 
 import (
-	"fmt"
 	"github.com/HFO4/gbc-in-cloud/driver"
 	"github.com/HFO4/gbc-in-cloud/util"
 	"log"
@@ -57,7 +56,8 @@ type Timer struct {
 
 func (core *Core) Init(romPath string) {
 
-	core.SpeedMultiple = 0
+	//todo 去掉注释
+	//core.SpeedMultiple = 0
 	core.Timer.TimerCounter = 0
 	core.Timer.DividerRegister = 0
 
@@ -81,12 +81,12 @@ func (core *Core) Run() {
 */
 func (core *Core) Update() {
 	cyclesThisUpdate := 0
-	for cyclesThisUpdate < (core.Clock+core.SpeedMultiple*core.Clock)/core.FPS {
-		if core.Debug {
-			if uint16(core.DebugControl) == core.CPU.Registers.PC-1 {
-				fmt.Scanf("%X", &core.DebugControl)
-			}
-		}
+	for cyclesThisUpdate < ((core.SpeedMultiple+1)*core.Clock)/core.FPS {
+		//if core.Debug {
+		//	if uint16(core.DebugControl) == core.CPU.Registers.PC-1 {
+		//		fmt.Scanf("%X", &core.DebugControl)
+		//	}
+		//}
 		//TODO halt
 		cycles := core.ExecuteNextOPCode()
 		cyclesThisUpdate += cycles
