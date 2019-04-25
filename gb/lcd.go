@@ -143,7 +143,7 @@ func (core *Core) UpdateGraphics(cycles int) {
 			// if gone past scanline 153 reset to 0
 			core.Memory.MainMemory[0xFF44] = 0
 		} else if currentLine < 144 {
-			// TODO draw the current scanline
+			core.DrawScanLine()
 		}
 
 	}

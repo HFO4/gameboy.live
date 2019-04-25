@@ -165,7 +165,7 @@ func (core *Core) StackPush(val uint16) {
 	core.WriteMemory(core.CPU.Registers.SP, byte(lo))
 
 	if core.Debug {
-		log.Printf("[Debug] Stack Push: %X, SP:%X", val, core.CPU.Registers.SP)
+		//log.Printf("[Debug] Stack Push: %X, SP:%X", val, core.CPU.Registers.SP)
 	}
 }
 

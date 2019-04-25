@@ -2,6 +2,7 @@ package gb
 
 import (
 	"fmt"
+	"github.com/HFO4/gbc-in-cloud/driver"
 	"github.com/HFO4/gbc-in-cloud/util"
 	"log"
 	"time"
@@ -11,6 +12,18 @@ type Core struct {
 	Cartridge Cartridge
 	CPU       CPU
 	Memory    Memory
+
+	/*
+		Screen pixel data
+	*/
+
+	//Screen pixel data
+	Screen [160][144][3]uint8
+
+	//Display driver
+	DisplayDriver driver.DisplayDriver
+
+	DrawSignal chan bool
 
 	/*
 		Clock and speed options
@@ -52,6 +65,8 @@ func (core *Core) Init(romPath string) {
 	core.initMemory()
 	core.initCPU()
 	core.initCB()
+
+	core.DisplayDriver.Init(&core.Screen)
 }
 
 func (core *Core) Run() {
@@ -79,6 +94,7 @@ func (core *Core) Update() {
 		core.UpdateGraphics(cycles)
 		core.Interrupt()
 	}
+	core.RenderScreen()
 	//log.Println("Render finish")
 }
 
@@ -164,7 +180,7 @@ func (core *Core) RequestInterrupt(id int) {
 	req = util.SetBit(req, uint(id))
 	core.WriteMemory(0xFF0F, req)
 	if core.Debug {
-		log.Printf("[Debug] New interrupt requested: \nID:%d  IF:0x%X  IME:%t \n", id, req, core.CPU.Flags.InterruptMaster)
+		//log.Printf("[Debug] New interrupt requested: \nID:%d  IF:0x%X  IME:%t \n", id, req, core.CPU.Flags.InterruptMaster)
 	}
 }
 

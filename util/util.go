@@ -22,3 +22,10 @@ func ClearBit(n byte, pos uint) byte {
 func TestBit(n byte, pos uint) bool {
 	return (((n) & (1 << (pos))) > 0)
 }
+
+/*
+	Get bit value in the specific bit
+*/
+func GetVal(val byte, pos uint) byte {
+	return (val >> pos) & 1
+}
