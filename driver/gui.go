@@ -4,6 +4,7 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	"image/color"
+	"log"
 	"os"
 )
 
@@ -16,7 +17,7 @@ type LCD struct {
 
 func (lcd *LCD) Init(pixels *[160][144][3]uint8) {
 	lcd.pixels = pixels
-
+	log.Println("[Display] Initialize GUI display")
 	lcd.pixelMap = pixel.MakePictureData(pixel.R(0, 0, 160, 144))
 
 }

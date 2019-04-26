@@ -11,6 +11,7 @@ type Core struct {
 	Cartridge Cartridge
 	CPU       CPU
 	Memory    Memory
+	Sound     Sound
 
 	/*
 		Screen pixel data
@@ -75,6 +76,10 @@ func (core *Core) Init(romPath string) {
 	core.initCB()
 
 	core.DisplayDriver.Init(&core.Screen)
+
+	if core.ToggleSound {
+		core.Sound.Init()
+	}
 }
 
 func (core *Core) Run() {

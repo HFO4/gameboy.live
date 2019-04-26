@@ -133,6 +133,12 @@ func (core *Core) WriteMemory(address uint16, data byte) {
 			core.SetClockFreq()
 		}
 
+	} else if address >= 0xFF10 && address <= 0xFF26 {
+		//Trigger sound controller
+		core.Memory.MainMemory[address] = data
+		if core.ToggleSound {
+			core.Sound.Trigger(address, data, core.Memory.MainMemory[0xFF10:0xFF26])
+		}
 	} else {
 		core.Memory.MainMemory[address] = data
 	}
