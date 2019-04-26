@@ -35,13 +35,21 @@ type Core struct {
 	SpeedMultiple int
 
 	/*
-		Development options
+	  ++++++++++++++++++++++++++
+	  +  Development options   +
+	  ++++++++++++++++++++++++++
 	*/
 	//Debug mode
 	Debug bool
 	//Commands num to be executed in DEBUG mode
 	DebugControl int
 
+	/*
+	  ++++++++++++++++++++++++++
+	  +      Other options     +
+	  ++++++++++++++++++++++++++
+	*/
+	ToggleSound bool
 	/*
 		Timer
 	*/

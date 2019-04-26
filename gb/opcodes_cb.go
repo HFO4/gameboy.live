@@ -68,6 +68,10 @@ func (core *Core) initCB() {
 			core.SWAP(getters[registerID], setters[registerID])
 		}
 
+		cbMap[0x38+i] = func() {
+			core.SRL(getters[registerID], setters[registerID])
+		}
+
 		/*
 			RES commands
 		*/
@@ -96,7 +100,55 @@ func (core *Core) initCB() {
 			setters[registerID](util.ClearBit(getters[registerID](), 7))
 		}
 
+		/*
+			BIT commands
+		*/
+		cbMap[0x40+i] = func() {
+			core.BIT(0, getters[registerID])
+		}
+		cbMap[0x48+i] = func() {
+			core.BIT(1, getters[registerID])
+		}
+		cbMap[0x50+i] = func() {
+			core.BIT(2, getters[registerID])
+		}
+		cbMap[0x58+i] = func() {
+			core.BIT(3, getters[registerID])
+		}
+		cbMap[0x60+i] = func() {
+			core.BIT(4, getters[registerID])
+		}
+		cbMap[0x68+i] = func() {
+			core.BIT(5, getters[registerID])
+		}
+		cbMap[0x70+i] = func() {
+			core.BIT(6, getters[registerID])
+		}
+		cbMap[0x78+i] = func() {
+			core.BIT(7, getters[registerID])
+		}
+
 	}
+}
+func (core *Core) SRL(getter func() byte, setter func(byte)) {
+	val := getter()
+	carry := val & 1
+	res := val >> 1
+	setter(res)
+
+	core.CPU.Flags.Zero = (res == 0)
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = false
+	core.CPU.Flags.Carry = (carry == 1)
+	core.CPU.updateAFLow()
+}
+
+func (core *Core) BIT(pos byte, getter func() byte) {
+	val := getter()
+	core.CPU.Flags.Zero = (val>>pos)&1 == 0
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = true
+	core.CPU.updateAFLow()
 }
 
 func (core *Core) SLA(getter func() byte, setter func(byte)) {
