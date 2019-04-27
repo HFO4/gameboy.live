@@ -117,6 +117,9 @@ func (core *Core) Init(romPath string) {
 			if OpcodeCycles[i*16+y]*4 != OPCodeFunctionMap[i*16+y].Clock && OPCodeFunctionMap[i*16+y].Clock != 0 {
 				log.Fatalf("%X", i*16+y)
 			}
+			if OPCodeFunctionMap[i*16+y].Clock == 0 {
+				log.Printf("%X\n", i*16+y)
+			}
 		}
 	}
 
@@ -365,7 +368,15 @@ func (core *Core) initRom(romPath string) {
 			ROMLength: len(romData),
 		}
 	case 0x01, 0x02, 0x03:
-		log.Println("mbc1")
+		core.Cartridge.MBC = MBC1{
+			rom:            romData,
+			CurrentROMBank: 1,
+			CurrentRAMBank: 1,
+		}
+		core.Cartridge.Props = CartridgeProps{
+			MBCType:   "MBC1",
+			ROMLength: len(romData),
+		}
 	case 0x05, 0x06:
 		log.Println("mbc2")
 	case 0x0F, 0x10, 0x11, 0x12, 0x13:

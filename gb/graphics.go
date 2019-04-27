@@ -2,6 +2,7 @@ package gb
 
 import (
 	"github.com/HFO4/gbc-in-cloud/util"
+	"log"
 )
 
 /*
@@ -28,7 +29,7 @@ func (core *Core) DrawScanLine() {
 	}
 
 	if util.TestBit(control, 1) {
-		core.RenderSprites()
+		//core.RenderSprites()
 	}
 }
 
@@ -143,6 +144,8 @@ func (core *Core) RenderSprites() {
 	}
 }
 
+var last uint16
+
 /*
 	Render Tiles for the current scan line
 */
@@ -226,7 +229,7 @@ func (core *Core) RenderTiles() {
 
 	// which of the 8 vertical pixels of the current
 	// tile is the scanline on?
-	var tileRow uint16 = ((uint16(yPos / 8)) * 32)
+	var tileRow = ((uint16(yPos / 8)) * 32)
 
 	// time to start drawing the 160 horizontal pixels
 	// for this scanline
@@ -270,6 +273,11 @@ func (core *Core) RenderTiles() {
 		line *= 2
 		data1 := core.ReadMemory(tileLocation + uint16(line))
 		data2 := core.ReadMemory(tileLocation + uint16(line) + 1)
+		if last == 0x86F0 && (tileLocation+uint16(line) == 0x8000) {
+			log.Printf("%X\n", tileNum)
+
+		}
+		last = tileLocation + uint16(line)
 
 		// pixel 0 in the tile is it 7 of data 1 and data2.
 		// Pixel 1 is bit 6 etc..

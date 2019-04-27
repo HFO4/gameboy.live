@@ -38,9 +38,9 @@ func (lcd *LCD) UpdateInput() bool {
 		// B button
 		pixelgl.KeyX: 5,
 		// SELECT button
-		pixelgl.KeyBackspace: 7,
+		pixelgl.KeyBackspace: 6,
 		// START button
-		pixelgl.KeyEnter: 6,
+		pixelgl.KeyEnter: 7,
 		// RIGHT button
 		pixelgl.KeyRight: 0,
 		// LEFT button

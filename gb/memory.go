@@ -96,7 +96,7 @@ func (core *Core) ReadMemory(address uint16) byte {
 
 func (core *Core) WriteMemory(address uint16, data byte) {
 	if address < 0x8000 {
-		log.Println("todo banking")
+		core.Cartridge.MBC.HandleBanking(address, data)
 		//core.HandleBanking(address,data) ;
 	} else if (address >= 0xE000) && (address < 0xFE00) {
 		// writing to ECHO ram also writes in RAM
