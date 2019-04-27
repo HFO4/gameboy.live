@@ -418,7 +418,7 @@ var OPCodeFunctionMap = [0x100]OPCodeUnit{
 	},
 	byte(0xA6): {
 		Func:  (*Core).OPA6,
-		Clock: 4,
+		Clock: 8,
 		OP:    "AND (HL)",
 	},
 	byte(0xA7): {
