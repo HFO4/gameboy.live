@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"github.com/HFO4/gbc-in-cloud/util"
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	"image/color"
@@ -13,6 +14,8 @@ type LCD struct {
 	window *pixelgl.Window
 
 	pixelMap *pixel.PictureData
+
+	inputStatus *byte
 }
 
 func (lcd *LCD) Init(pixels *[160][144][3]uint8) {
@@ -22,11 +25,54 @@ func (lcd *LCD) Init(pixels *[160][144][3]uint8) {
 
 }
 
+func (lcd *LCD) InitStatus(statusPointer *byte) {
+	lcd.inputStatus = statusPointer
+}
+
+func (lcd *LCD) UpdateInput() bool {
+	// Mapping from keys to GB index.
+	// ref :https://github.com/Humpheh/goboy/blob/master/pkg/gbio/iopixel/pixels.go
+	var keyMap = map[pixelgl.Button]byte{
+		// A button
+		pixelgl.KeyZ: 4,
+		// B button
+		pixelgl.KeyX: 5,
+		// SELECT button
+		pixelgl.KeyBackspace: 7,
+		// START button
+		pixelgl.KeyEnter: 6,
+		// RIGHT button
+		pixelgl.KeyRight: 0,
+		// LEFT button
+		pixelgl.KeyLeft: 1,
+		// UP button
+		pixelgl.KeyUp: 2,
+		// DOWN button
+		pixelgl.KeyDown: 3,
+	}
+	var requestInterrupt bool
+	var statusCopy byte
+	statusCopy = *lcd.inputStatus
+	for key, offset := range keyMap {
+		if lcd.window.JustPressed(key) {
+			statusCopy = util.ClearBit(statusCopy, uint(offset))
+			requestInterrupt = true
+		}
+		if lcd.window.JustReleased(key) {
+			statusCopy = util.SetBit(statusCopy, uint(offset))
+			requestInterrupt = false
+		}
+	}
+
+	*lcd.inputStatus = statusCopy
+	return requestInterrupt
+}
+
 func (lcd *LCD) Run(drawSignal chan bool) {
 	cfg := pixelgl.WindowConfig{
 		Title:  "TETRIS [FPS:60] [CLOCK:4194304]",
 		Bounds: pixel.R(0, 0, 160*3, 144*3),
-		VSync:  true,
+		VSync:  false,
 	}
 	win, err := pixelgl.NewWindow(cfg)
 	if err != nil {

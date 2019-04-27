@@ -33,12 +33,14 @@ func run() {
 	//fmt.Printf("%t",util.TestBit(t,2))
 	//fmt.Printf("%t",util.TestBit(t,3))
 	//fmt.Printf("%t\n",util.TestBit(t,4))
+	Driver := &driver.LCD{}
 	core := gb.Core{
 		FPS:           60,
 		Clock:         4194304,
 		Debug:         true,
 		DebugControl:  255,
-		DisplayDriver: &driver.LCD{},
+		DisplayDriver: Driver,
+		Controller:    Driver,
 		DrawSignal:    make(chan bool),
 		SpeedMultiple: 0,
 		ToggleSound:   true,

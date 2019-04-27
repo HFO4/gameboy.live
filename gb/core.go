@@ -14,7 +14,17 @@ type Core struct {
 	Sound     Sound
 
 	/*
-		Screen pixel data
+	   +++++++++++++++++++++++
+	   +        Joypad       +
+	   +++++++++++++++++++++++
+	*/
+	Controller   driver.ControllerDriver
+	JoypadStatus byte
+
+	/*
+	   +++++++++++++++++++++++
+	   +  Screen pixel data  +
+	   +++++++++++++++++++++++
 	*/
 
 	//Screen pixel data
@@ -26,7 +36,9 @@ type Core struct {
 	DrawSignal chan bool
 
 	/*
-		Clock and speed options
+	  +++++++++++++++++++++++++++
+	  + Clock and speed options +
+	  +++++++++++++++++++++++++++
 	*/
 	//Frames per-second
 	FPS int
@@ -44,6 +56,8 @@ type Core struct {
 	Debug bool
 	//Commands num to be executed in DEBUG mode
 	DebugControl int
+
+	StepExe int
 
 	/*
 	  ++++++++++++++++++++++++++
@@ -70,10 +84,13 @@ func (core *Core) Init(romPath string) {
 	core.Timer.TimerCounter = 0
 	core.Timer.DividerRegister = 0
 
+	core.JoypadStatus = 0xFF
+
 	core.initRom(romPath)
 	core.initMemory()
 	core.initCPU()
 	core.initCB()
+	core.Controller.InitStatus(&core.JoypadStatus)
 
 	core.DisplayDriver.Init(&core.Screen)
 	var OpcodeCycles = []int{
@@ -112,6 +129,9 @@ func (core *Core) Run() {
 	ticker := time.NewTicker(time.Second / time.Duration(core.FPS))
 	for range ticker.C {
 		core.Update()
+		if core.Controller.UpdateInput() {
+			core.RequestInterrupt(4)
+		}
 	}
 }
 
@@ -122,8 +142,9 @@ func (core *Core) Update() {
 	cyclesThisUpdate := 0
 	for cyclesThisUpdate < ((core.SpeedMultiple+1)*core.Clock)/core.FPS {
 		//if core.Debug {
-		//	if uint16(core.DebugControl) == core.CPU.Registers.PC-1 {
+		//	if uint16(core.DebugControl) <= core.CPU.Registers.PC-1 {
 		//		fmt.Scanf("%X", &core.DebugControl)
+		//		core.StepExe = true
 		//	}
 		//}
 		//TODO halt

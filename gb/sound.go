@@ -133,17 +133,17 @@ func (sound *Sound) Play() {
 	stream.Add(sound.Channel3)
 	stream.Add(sound.Channel4)
 
-	done := make(chan bool)
-	rawStream := beep.Seq(&stream, beep.Callback(func() {
-		done <- true
-	}))
+	//done := make(chan bool)
+	//rawStream := beep.Seq(&stream, beep.Callback(func() {
+	//	done <- true
+	//}))
 	volume := &effects.Volume{
-		Streamer: rawStream,
+		Streamer: &stream,
 		Base:     2,
 		Volume:   -3,
 	}
 	speaker.Play(volume)
-	<-done
+	//<-done
 }
 
 /*
@@ -203,7 +203,7 @@ func (sound *Sound) Trigger(address uint16, val byte, vram []byte) {
 	// Channel 1
 	case 0xFF11:
 		sound.Channel1.waveDuty = (val >> 6) + 1
-		sound.Channel1.duration = 64.0 - float64(val&0x3F)*(1.0/256.0)
+		sound.Channel1.duration = (64.0 - float64(val&0x3F)) * (1.0 / 256.0)
 	case 0xFF14:
 		if util.TestBit(val, 7) {
 			sound.Channel1.reSet()
@@ -221,12 +221,13 @@ func (sound *Sound) Trigger(address uint16, val byte, vram []byte) {
 			sound.Channel1.freqInitial = int(sound.Channel1.freqHigh + sound.Channel1.freqLow)
 			sound.Channel1.freqLast = int(sound.Channel1.freqHigh + sound.Channel1.freqLow)
 
+			sound.Channel1.stopWhileTimeout = util.TestBit(val, 6)
+			sound.Channel1.freqHigh = uint16((val & 0x7)) << 8
+			sound.Channel1.Freq = 131072 / (2048 - int(sound.Channel1.freqHigh+sound.Channel1.freqLow))
+			sound.Channel1.tickUnit = 44100.0 / float64(sound.Channel1.Freq)
+
 			sound.Channel1.enable = true
 		}
-		sound.Channel1.stopWhileTimeout = util.TestBit(val, 6)
-		sound.Channel1.freqHigh = uint16((val & 0x7)) << 8
-		sound.Channel1.Freq = 131072 / (2048 - int(sound.Channel1.freqHigh+sound.Channel1.freqLow))
-		sound.Channel1.tickUnit = 44100.0 / float64(sound.Channel1.Freq)
 		//log.Println(sound.Channel1)
 	case 0xFF13:
 		sound.Channel1.freqLow = uint16(val)
@@ -242,7 +243,7 @@ func (sound *Sound) Trigger(address uint16, val byte, vram []byte) {
 			  Bit 5-0 - Sound length data (Write Only) (t1: 0-63)
 		*/
 		sound.Channel2.waveDuty = (val >> 6) + 1
-		sound.Channel2.duration = 64.0 - float64(val&0x3F)*(1.0/256.0)
+		sound.Channel2.duration = (64.0 - float64(val&0x3F)) * (1.0 / 256.0)
 	case 0xFF19:
 		/*
 			FF19 - NR24 - Channel 2 Frequency hi data (R/W)
@@ -258,12 +259,13 @@ func (sound *Sound) Trigger(address uint16, val byte, vram []byte) {
 			sound.Channel2.envelopeInitial = (sound.VRAMCache[0x07] & 0xF0) >> 4
 			sound.Channel2.envelopeSweepNum = sound.VRAMCache[0x07] & 0x7
 			sound.Channel2.volume = float64(sound.Channel2.envelopeInitial) / float64(0xf)
+
+			sound.Channel2.stopWhileTimeout = util.TestBit(val, 6)
+			sound.Channel2.freqHigh = uint16((val & 0x7)) << 8
+			sound.Channel2.Freq = 131072 / (2048 - int(sound.Channel2.freqHigh+sound.Channel2.freqLow))
+			sound.Channel2.tickUnit = 44100.0 / float64(sound.Channel2.Freq)
 			sound.Channel2.enable = true
 		}
-		sound.Channel2.stopWhileTimeout = util.TestBit(val, 6)
-		sound.Channel2.freqHigh = uint16((val & 0x7)) << 8
-		sound.Channel2.Freq = 131072 / (2048 - int(sound.Channel2.freqHigh+sound.Channel2.freqLow))
-		sound.Channel2.tickUnit = 44100.0 / float64(sound.Channel2.Freq)
 		//log.Println(sound.Channel2)
 	case 0xFF18:
 		/*
@@ -293,7 +295,7 @@ func (sound *Sound) Trigger(address uint16, val byte, vram []byte) {
 			Sound Length = (256-t1)*(1/256) seconds
 			This value is used only if Bit 6 in NR34 is set.
 		*/
-		sound.Channel3.duration = 256.0 - float64(int(val))*(1.0/256.0)
+		sound.Channel3.duration = (256.0 - float64(int(val))) * (1.0 / 256.0)
 	case 0xFF1C:
 		/*
 			FF1C - NR32 - Channel 3 Select output level (R/W)
@@ -320,6 +322,7 @@ func (sound *Sound) Trigger(address uint16, val byte, vram []byte) {
 			sound.Channel3.reSet()
 			sound.Channel3.Freq = 65536 / (2048 - int(uint16((val&0x7))<<8+uint16(sound.VRAMCache[0x0D])))
 			sound.Channel3.enable = true
+			sound.Channel3.stopWhileTimeout = util.TestBit(val, 6)
 			sound.Channel3.waveDuty = 1
 		}
 
@@ -331,7 +334,7 @@ func (sound *Sound) Trigger(address uint16, val byte, vram []byte) {
 			Sound Length = (64-t1)*(1/256) seconds
 			The Length value is used only if Bit 6 in NR44 is set.
 		*/
-		sound.Channel4.duration = 256.0 - float64(int(val))*(1.0/256.0)
+		sound.Channel4.duration = 64.0 - float64(int(val))*(1.0/256.0)
 	case 0xFF22:
 		/*
 			FF22 - NR43 - Channel 4 Polynomial Counter (R/W)
@@ -365,9 +368,11 @@ func (sound *Sound) Trigger(address uint16, val byte, vram []byte) {
 			sound.Channel4.volume = float64(sound.Channel4.envelopeInitial) / float64(0xf)
 			sound.Channel4.waveDuty = 1
 
+			sound.Channel4.stopWhileTimeout = util.TestBit(val, 6)
+
 			sound.Channel4.enable = true
 		}
-		sound.Channel4.stopWhileTimeout = util.TestBit(val, 6)
+
 	}
 }
 

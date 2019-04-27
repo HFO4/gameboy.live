@@ -2,7 +2,6 @@ package gb
 
 import (
 	"github.com/HFO4/gbc-in-cloud/util"
-	"io/ioutil"
 	"log"
 )
 
@@ -102,7 +101,26 @@ func (core *Core) ExecuteNextOPCode() int {
 func (core *Core) ExecuteOPCode(code byte) int {
 	if OPCodeFunctionMap[code].Clock != 0 {
 
+		//if core.CPU.Registers.PC-1==0x6D2E {
+		//
+		//	core.StepExe++
+		//}
+		//if core.StepExe>=3 && core.StepExe<=1000{
+		//	af := core.CPU.getAF()
+		//	bc := core.CPU.getBC()
+		//	de := core.CPU.getDE()
+		//	hl := core.CPU.Registers.HL
+		//	sp := core.CPU.Registers.SP
+		//	pc := core.CPU.Registers.PC - 1
+		//	lcdc := core.Memory.MainMemory[0xFF40]
+		//	IF := core.Memory.MainMemory[0xFF0F]
+		//	IE := core.Memory.MainMemory[0xFFFF]
+		//	log.Printf("[Debug] \n\033[34m[OP:%s]\nAF:%04X  BC:%04X  DE:%04X  HL:%04X  SP:%04X\nPC:%04X  LCDC:%02X  IF:%02X    IE:%02X    IME:%t \033[0m", OPCodeFunctionMap[code].OP, af, bc, de, hl, sp, pc, lcdc, IF, IE, core.CPU.Flags.InterruptMaster)
+		//	core.StepExe++
+		//}
+
 		extCycles := OPCodeFunctionMap[code].Func(core)
+		//core.StepExe++
 
 		// we are trying to disable interupts, however interupts get disabled after the next instruction
 		// 0xF3 is the opcode for disabling interupt
@@ -122,10 +140,6 @@ func (core *Core) ExecuteOPCode(code byte) int {
 
 		return OPCodeFunctionMap[code].Clock + extCycles
 	} else {
-		err := ioutil.WriteFile("G:\\LearnGo\\gb\\memory.dump", core.Memory.MainMemory[:], 0644)
-		if err != nil {
-			panic(err)
-		}
 		if core.Debug {
 			af := core.CPU.getAF()
 			bc := core.CPU.getBC()

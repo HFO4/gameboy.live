@@ -1,6 +1,7 @@
 package gb
 
 import (
+	"io/ioutil"
 	"log"
 )
 
@@ -88,7 +89,7 @@ func (core *Core) ReadMemory(address uint16) byte {
 		// 	 Bit 2 - P12 Input Up    or Select   (0=Pressed) (Read Only)
 		// 	 Bit 1 - P11 Input Left  or Button B (0=Pressed) (Read Only)
 		// 	 Bit 0 - P10 Input Right or Button A (0=Pressed) (Read Only)
-		return 0xEF
+		return core.GetJoypadStatus()
 	}
 	return core.Memory.MainMemory[address]
 }
@@ -139,6 +140,7 @@ func (core *Core) WriteMemory(address uint16, data byte) {
 		if core.ToggleSound {
 			core.Sound.Trigger(address, data, core.Memory.MainMemory[0xFF10:0xFF40])
 		}
+
 	} else {
 		core.Memory.MainMemory[address] = data
 	}
@@ -183,4 +185,11 @@ func (core *Core) StackPop() uint16 {
 	hi := core.ReadMemory(core.CPU.Registers.SP + 1)
 	core.CPU.Registers.SP += 2
 	return uint16(lo) + (uint16(hi) << 8)
+}
+
+func (memory *Memory) Dump(path string) {
+	err := ioutil.WriteFile(path, memory.MainMemory[:], 0644)
+	if err != nil {
+		panic(err)
+	}
 }

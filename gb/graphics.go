@@ -26,6 +26,121 @@ func (core *Core) DrawScanLine() {
 	if util.TestBit(control, 0) {
 		core.RenderTiles()
 	}
+
+	if util.TestBit(control, 1) {
+		core.RenderSprites()
+	}
+}
+
+/*
+	Render Sprites
+*/
+func (core *Core) RenderSprites() {
+	use8x16 := false
+	lcdControl := core.ReadMemory(0xFF40)
+
+	if util.TestBit(lcdControl, 2) {
+		use8x16 = true
+	}
+	for sprite := 0; sprite < 40; sprite++ {
+		// sprite occupies 4 bytes in the sprite attributes table
+		index := sprite * 4
+		yPos := core.ReadMemory(0xFE00+uint16(index)) - 16
+		xPos := core.ReadMemory(0xFE00+uint16(index)+1) - 8
+		tileLocation := core.ReadMemory(uint16(0xFE00 + index + 2))
+		attributes := core.ReadMemory(0xFE00 + uint16(index) + 3)
+
+		yFlip := util.TestBit(attributes, 6)
+		xFlip := util.TestBit(attributes, 5)
+
+		scanline := core.ReadMemory(0xFF44)
+
+		ysize := 8
+		if use8x16 {
+			ysize = 16
+		}
+
+		// does this sprite intercept with the scanline?
+		if (scanline >= yPos) && (scanline < (yPos + byte(ysize))) {
+			line := int(scanline - yPos)
+			// read the sprite in backwards in the y axis
+			if yFlip {
+				line -= ysize
+				line *= -1
+			}
+			line *= 2 // same as for tiles
+			dataAddress := (uint16(int(tileLocation)*16 + line))
+			data1 := core.ReadMemory(0x8000 + dataAddress)
+			data2 := core.ReadMemory(0x8000 + dataAddress + 1)
+
+			// its easier to read in from right to left as pixel 0 is
+			// bit 7 in the colour data, pixel 1 is bit 6 etc...
+			for tilePixel := 7; tilePixel >= 0; tilePixel-- {
+				colourbit := tilePixel
+
+				// read the sprite in backwards for the x axis
+				if xFlip {
+					colourbit -= 7
+					colourbit *= -1
+				}
+
+				colourNum := util.GetVal(data2, uint(colourbit))
+				colourNum <<= 1
+				colourNum |= util.GetVal(data1, uint(colourbit))
+				colourAddress := uint16(0xFF48)
+				if util.TestBit(attributes, 4) {
+					colourAddress = 0xFF49
+				}
+				// now we have the colour id get the actual
+				// colour from palette 0xFF47
+				colour := core.GetColour(colourNum, colourAddress)
+
+				// white is transparent for sprites.
+				if colour == 0 {
+					continue
+				}
+
+				red := uint8(0)
+				green := uint8(0)
+				blue := uint8(0)
+
+				switch colour {
+				case 0:
+					red = 255
+					green = 255
+					blue = 255
+				case 1:
+					red = 0xCC
+					green = 0xCC
+					blue = 0xCC
+				case 2:
+					red = 0x77
+					green = 0x77
+					blue = 0x77
+				default:
+					red = 0
+					green = 0
+					blue = 0
+				}
+
+				xPix := 0 - tilePixel
+				xPix += 7
+
+				pixel := int(xPos) + xPix
+
+				// sanity check
+				if (scanline < 0) || (scanline > 143) || (pixel < 0) || (pixel > 159) {
+					continue
+				}
+
+				core.Screen[pixel][scanline][0] = red
+				core.Screen[pixel][scanline][1] = green
+				core.Screen[pixel][scanline][2] = blue
+
+			}
+		}
+
+	}
 }
 
 /*
