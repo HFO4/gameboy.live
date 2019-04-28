@@ -1,6 +1,8 @@
 package gb
 
-import "github.com/HFO4/gbc-in-cloud/util"
+import (
+	"github.com/HFO4/gbc-in-cloud/util"
+)
 
 var cbMap = [0x100](func()){}
 
@@ -30,7 +32,7 @@ func (core *Core) initCB() {
 		func() byte { return core.CPU.Registers.C },
 		func() byte { return core.CPU.Registers.D },
 		func() byte { return core.CPU.Registers.E },
-		func() byte { return byte(core.CPU.Registers.HL >> 8) },
+		func() byte { return byte((core.CPU.Registers.HL & 0xFF00) >> 8) },
 		func() byte { return byte(core.CPU.Registers.HL & 0x00FF) },
 		func() byte { return core.ReadMemory(core.CPU.Registers.HL) },
 		func() byte { return core.CPU.Registers.A },
@@ -60,8 +62,19 @@ func (core *Core) initCB() {
 			core.RRC(getters[registerID], setters[registerID])
 		}
 
+		cbMap[0x10+i] = func() {
+			core.RL(getters[registerID], setters[registerID])
+		}
+
+		cbMap[0x18+i] = func() {
+			core.RR(getters[registerID], setters[registerID])
+		}
+
 		cbMap[0x20+i] = func() {
 			core.SLA(getters[registerID], setters[registerID])
+		}
+		cbMap[0x28+i] = func() {
+			core.SRA(getters[registerID], setters[registerID])
 		}
 
 		cbMap[0x30+i] = func() {
@@ -128,8 +141,36 @@ func (core *Core) initCB() {
 			core.BIT(7, getters[registerID])
 		}
 
+		/*
+			Set commands
+		*/
+		cbMap[0xC0+i] = func() {
+			setters[registerID](util.SetBit(getters[registerID](), 0))
+		}
+		cbMap[0xC8+i] = func() {
+			setters[registerID](util.SetBit(getters[registerID](), 1))
+		}
+		cbMap[0xD0+i] = func() {
+			setters[registerID](util.SetBit(getters[registerID](), 2))
+		}
+		cbMap[0xD8+i] = func() {
+			setters[registerID](util.SetBit(getters[registerID](), 3))
+		}
+		cbMap[0xE0+i] = func() {
+			setters[registerID](util.SetBit(getters[registerID](), 4))
+		}
+		cbMap[0xE8+i] = func() {
+			setters[registerID](util.SetBit(getters[registerID](), 5))
+		}
+		cbMap[0xF0+i] = func() {
+			setters[registerID](util.SetBit(getters[registerID](), 6))
+		}
+		cbMap[0xF8+i] = func() {
+			setters[registerID](util.SetBit(getters[registerID](), 7))
+		}
 	}
 }
+
 func (core *Core) SRL(getter func() byte, setter func(byte)) {
 	val := getter()
 	carry := val & 1
@@ -161,6 +202,20 @@ func (core *Core) SLA(getter func() byte, setter func(byte)) {
 	core.CPU.Flags.Sub = false
 	core.CPU.Flags.HalfCarry = false
 	core.CPU.Flags.Carry = (carry == 1)
+	core.CPU.updateAFLow()
+}
+
+func (core *Core) SRA(getter func() byte, setter func(byte)) {
+
+	val := getter()
+
+	rot := (val & 128) | (val >> 1)
+	setter(rot)
+
+	core.CPU.Flags.Zero = (rot == 0)
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = false
+	core.CPU.Flags.Carry = (val&1 == 1)
 	core.CPU.updateAFLow()
 }
 
@@ -198,5 +253,40 @@ func (core *Core) RRC(getter func() byte, setter func(byte)) {
 	core.CPU.Flags.Sub = false
 	core.CPU.Flags.HalfCarry = false
 	core.CPU.Flags.Carry = (carry == 1)
+	core.CPU.updateAFLow()
+}
+
+func (core *Core) RR(getter func() byte, setter func(byte)) {
+	val := getter()
+	carry := val & 1
+	oldCarry := byte(0)
+	if core.CPU.Flags.Carry {
+		oldCarry = 1
+	}
+	rot := (val >> 1) | (oldCarry << 7)
+	setter(rot)
+
+	core.CPU.Flags.Zero = (rot == 0)
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = false
+	core.CPU.Flags.Carry = (carry == 1)
+	core.CPU.updateAFLow()
+}
+
+func (core *Core) RL(getter func() byte, setter func(byte)) {
+	val := getter()
+	oldCarry := byte(0)
+	if core.CPU.Flags.Carry {
+		oldCarry = 1
+	}
+
+	newCarry := val >> 7
+	rot := (val<<1)&0xFF | oldCarry
+	setter(rot)
+
+	core.CPU.Flags.Zero = (rot == 0)
+	core.CPU.Flags.Sub = false
+	core.CPU.Flags.HalfCarry = false
+	core.CPU.Flags.Carry = (newCarry == 1)
 	core.CPU.updateAFLow()
 }

@@ -55,7 +55,7 @@ type Core struct {
 	//Debug mode
 	Debug bool
 	//Commands num to be executed in DEBUG mode
-	DebugControl int
+	DebugControl uint16
 
 	StepExe int
 
@@ -95,13 +95,13 @@ func (core *Core) Init(romPath string) {
 	core.DisplayDriver.Init(&core.Screen)
 	var OpcodeCycles = []int{
 		1, 3, 2, 2, 1, 1, 2, 1, 5, 2, 2, 2, 1, 1, 2, 1, // 0
-		0, 3, 2, 2, 1, 1, 2, 1, 3, 2, 2, 2, 1, 1, 2, 1, // 1
+		1, 3, 2, 2, 1, 1, 2, 1, 3, 2, 2, 2, 1, 1, 2, 1, // 1
 		2, 3, 2, 2, 1, 1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 1, // 2
 		2, 3, 2, 2, 3, 3, 3, 1, 2, 2, 2, 2, 1, 1, 2, 1, // 3
 		1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 4
 		1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 5
 		1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 6
-		2, 2, 2, 2, 2, 2, 0, 2, 1, 1, 1, 1, 1, 1, 2, 1, // 7
+		2, 2, 2, 2, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, // 7
 		1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 8
 		1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 9
 		1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // a
@@ -112,8 +112,8 @@ func (core *Core) Init(romPath string) {
 		3, 3, 2, 1, 0, 4, 2, 4, 3, 2, 4, 1, 0, 0, 2, 4, // f
 	} //0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
 
-	for i := 0; i < 0xf; i++ {
-		for y := 0; y < 0xf; y++ {
+	for i := 0; i <= 0xf; i++ {
+		for y := 0; y <= 0xf; y++ {
 			if OpcodeCycles[i*16+y]*4 != OPCodeFunctionMap[i*16+y].Clock && OPCodeFunctionMap[i*16+y].Clock != 0 {
 				log.Fatalf("%X", i*16+y)
 			}
@@ -121,6 +121,10 @@ func (core *Core) Init(romPath string) {
 				log.Printf("%X\n", i*16+y)
 			}
 		}
+	}
+
+	if core.Debug {
+		core.DebugControl = 0x0100
 	}
 
 	if core.ToggleSound {
@@ -151,8 +155,11 @@ func (core *Core) Update() {
 		//	}
 		//}
 		//TODO halt
-		cycles := core.ExecuteNextOPCode()
-		cyclesThisUpdate += cycles
+		cycles := 4
+		if !core.CPU.Halt {
+			cycles = core.ExecuteNextOPCode()
+			cyclesThisUpdate += cycles
+		}
 		core.UpdateTimers(cycles)
 		core.UpdateGraphics(cycles)
 		core.Interrupt()
@@ -165,8 +172,22 @@ func (core *Core) Update() {
 	Check interrupt.
 */
 func (core *Core) Interrupt() {
+
+	if core.CPU.Flags.PendingInterruptEnabled {
+		core.CPU.Flags.PendingInterruptEnabled = false
+		core.CPU.Flags.InterruptMaster = true
+		return
+	}
+
+	if !core.CPU.Flags.InterruptMaster && !core.CPU.Halt {
+		return
+	}
+
+	//if !core.CPU.Flags.InterruptMaster && !core.CPU.Halt{
+	//	return
+	//}
 	//Check the Interrupt Master Enable Flag
-	if core.CPU.Flags.InterruptMaster {
+	if core.CPU.Flags.InterruptMaster || core.CPU.Halt {
 		req := core.ReadMemory(0xFF0F)
 		enabled := core.ReadMemory(0xFFFF)
 		if req > 0 {
@@ -185,8 +206,15 @@ func (core *Core) Interrupt() {
 	Perform interrupt
 */
 func (core *Core) DoInterrupt(id int) {
+
+	if !core.CPU.Flags.InterruptMaster && core.CPU.Halt {
+		core.CPU.Halt = false
+		return
+	}
+
 	//Turn off the Interrupt Master Enable Flag
 	core.CPU.Flags.InterruptMaster = false
+	core.CPU.Halt = false
 
 	req := core.ReadMemory(0xFF0F)
 	req = util.ClearBit(req, uint(id))
@@ -205,6 +233,8 @@ func (core *Core) DoInterrupt(id int) {
 		core.CPU.Registers.PC = 0x48
 	case 2:
 		core.CPU.Registers.PC = 0x50
+	case 3:
+		core.CPU.Registers.PC = 0x58
 	case 4:
 		core.CPU.Registers.PC = 0x60
 	default:

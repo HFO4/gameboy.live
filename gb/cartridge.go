@@ -105,6 +105,7 @@ type MBC interface {
 	ReadRom(uint16) byte
 	ReadRomBank(uint16) byte
 	ReadRamBank(uint16) byte
+	HandleBanking(uint16, byte)
 }
 
 /*
@@ -142,8 +143,44 @@ func (mbc MBCRom) ReadRom(address uint16) byte {
 	return mbc.rom[address]
 }
 
+func (mbc MBCRom) HandleBanking(address uint16, val byte) {
+}
+
 /*	Single ROM without MBC
 	=====================================
+*/
+
+/*
+	====================================
+		MBC1
+*/
+type MBC1 struct {
+	rom            []byte
+	CurrentROMBank byte
+	RAMBank        [0x8000]byte
+	CurrentRAMBank byte
+	EnableRAM      bool
+}
+
+func (mbc MBC1) ReadRomBank(address uint16) byte {
+	newAddress := address - 0x4000
+	return mbc.rom[newAddress+(uint16(mbc.CurrentROMBank)*0x4000)]
+}
+
+func (mbc MBC1) ReadRamBank(address uint16) byte {
+	newAddress := address - 0x4000
+	return mbc.RAMBank[newAddress+(uint16(mbc.CurrentRAMBank)*0x2000)]
+}
+func (mbc MBC1) ReadRom(address uint16) byte {
+	return mbc.rom[address]
+}
+func (mbc MBC1) HandleBanking(address uint16, val byte) {
+	log.Println("banking")
+}
+
+/*
+		MBC1
+	====================================
 */
 
 func InitCartridge() {

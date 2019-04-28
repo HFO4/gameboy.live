@@ -29,7 +29,7 @@ func (core *Core) DrawScanLine() {
 	}
 
 	if util.TestBit(control, 1) {
-		//core.RenderSprites()
+		core.RenderSprites()
 	}
 }
 

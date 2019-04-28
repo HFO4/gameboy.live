@@ -75,7 +75,7 @@ func (core *Core) ReadMemory(address uint16) byte {
 		return core.Cartridge.MBC.ReadRomBank(address)
 	} else if (address >= 0xA000) && (address <= 0xBFFF) {
 		// are we reading from ram memory bank?
-		return core.Cartridge.MBC.ReadRomBank(address)
+		return core.Cartridge.MBC.ReadRamBank(address)
 	} else if 0xFF00 == address {
 		// Read Joypad status
 		// FF00 - P1/JOYP - Joypad (R/W)

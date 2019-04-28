@@ -213,7 +213,7 @@ func (sound *Sound) Trigger(address uint16, val byte, vram []byte) {
 			//Sweep options
 			sound.Channel1.sweepIncrease = !util.TestBit(sound.VRAMCache[0x00], 3)
 			sound.Channel1.sweepNumber = sound.VRAMCache[0x00] & 0x7
-			sound.Channel1.sweepTime = int(sound.VRAMCache[0x00] & 0x70)
+			sound.Channel1.sweepTime = int(sound.VRAMCache[0x00] & 0x07)
 			sound.Channel1.freqInitial = int(sound.Channel1.freqHigh + sound.Channel1.freqLow)
 			sound.Channel1.freqLast = int(sound.Channel1.freqHigh + sound.Channel1.freqLow)
 

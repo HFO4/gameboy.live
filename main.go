@@ -45,7 +45,7 @@ func run() {
 		SpeedMultiple: 0,
 		ToggleSound:   true,
 	}
-	core.Init("G:\\LearnGo\\gb\\06-ld r,r.gb")
+	core.Init("G:\\LearnGo\\gb\\test.gb")
 	go core.DisplayDriver.Run(core.DrawSignal)
 	core.Run()
 }

@@ -46,10 +46,11 @@ func (core *Core) SetLCDStatus() {
 	status := core.ReadMemory(0xFF41)
 	if !core.IsLCDEnabled() {
 		// set the mode to 1 during lcd disabled and reset scanline
-		core.Timer.ScalineCounter = 0
+		core.Timer.ScalineCounter = 456
 		core.Memory.MainMemory[0xFF44] = 0
 		status &= 252
 		status = util.SetBit(status, 0)
+		status = util.SetBit(status, 1)
 		core.WriteMemory(0xFF41, status)
 		return
 	}
@@ -66,7 +67,7 @@ func (core *Core) SetLCDStatus() {
 		status = util.ClearBit(status, 1)
 		reqInt = util.TestBit(status, 4)
 	} else {
-		mode2bounds := 80
+		mode2bounds := 456 - 80
 		mode3bounds := 172
 
 		// mode 2
@@ -78,11 +79,11 @@ func (core *Core) SetLCDStatus() {
 		} else if core.Timer.ScalineCounter >= mode3bounds {
 			// mode 3
 			status = util.SetBit(status, 1)
-			status = util.ClearBit(status, 0)
+			status = util.SetBit(status, 0)
 		} else {
 			// mode 0
 			mode = 0
-			status = util.SetBit(status, 1)
+			status = util.ClearBit(status, 1)
 			status = util.ClearBit(status, 0)
 			reqInt = util.TestBit(status, 3)
 		}
@@ -122,19 +123,19 @@ func (core *Core) UpdateGraphics(cycles int) {
 	//A complete cycle through Scan Line states takes 456 clks.
 	//We use a counter to mark this.
 	if core.IsLCDEnabled() {
-		core.Timer.ScalineCounter += cycles
+		core.Timer.ScalineCounter -= cycles
 	} else {
 		return
 	}
 
-	if core.Timer.ScalineCounter >= 456 {
+	if core.Timer.ScalineCounter < 0 {
 		// time to move onto next scanline
 		core.Memory.MainMemory[0xFF44]++
 
 		currentLine := core.ReadMemory(0xFF44)
 
 		//Reset the counter
-		core.Timer.ScalineCounter = 0
+		core.Timer.ScalineCounter += 456
 
 		// we have entered vertical blank period
 		if currentLine == 144 {

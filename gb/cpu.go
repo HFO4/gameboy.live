@@ -9,6 +9,7 @@ import (
 type CPU struct {
 	Registers Registers
 	Flags     Flags
+	Halt      bool
 }
 
 /*
@@ -53,8 +54,7 @@ type Flags struct {
 	//  	1 - Enable all Interrupts that are enabled in IE Register (FFFF)
 	InterruptMaster bool
 
-	PendingInterruptDisabled bool
-	PendingInterruptEnabled  bool
+	PendingInterruptEnabled bool
 }
 
 func (core *Core) initCPU() {
@@ -106,6 +106,9 @@ func (core *Core) ExecuteOPCode(code byte) int {
 		//if core.CPU.Registers.A==0x4B && core.CPU.Registers.PC == 0x27f3{
 		//	core.DebugControl=1
 		//}
+		//if core.CPU.Registers.PC-1==0x25C1{
+		//	core.DebugControl=1
+		//}
 		if core.DebugControl == 1 {
 			af := core.CPU.getAF()
 			bc := core.CPU.getBC()
@@ -119,25 +122,13 @@ func (core *Core) ExecuteOPCode(code byte) int {
 			log.Printf("[Debug] \n\033[34m[OP:%s]\nAF:%04X  BC:%04X  DE:%04X  HL:%04X  SP:%04X\nPC:%04X  LCDC:%02X  IF:%02X    IE:%02X    IME:%t\033[0m", OPCodeFunctionMap[code].OP, af, bc, de, hl, sp, pc, lcdc, IF, IE, core.CPU.Flags.InterruptMaster)
 			fmt.Scanf("%X", &t)
 		}
-		extCycles := OPCodeFunctionMap[code].Func(core)
+		var extCycles int
+		//if core.CPU.Halt{
+		//	extCycles = 4
+		//}else{
+		extCycles = OPCodeFunctionMap[code].Func(core)
+		//}
 		//core.StepExe++
-
-		// we are trying to disable interupts, however interupts get disabled after the next instruction
-		// 0xF3 is the opcode for disabling interupt
-		if core.CPU.Flags.PendingInterruptDisabled {
-			if core.ReadMemory(core.CPU.Registers.PC-1) != 0xF3 {
-				core.CPU.Flags.PendingInterruptDisabled = false
-				core.CPU.Flags.InterruptMaster = false
-			}
-		}
-
-		if core.CPU.Flags.PendingInterruptEnabled {
-			if core.ReadMemory(core.CPU.Registers.PC-1) != 0xFB {
-				core.CPU.Flags.PendingInterruptEnabled = false
-				core.CPU.Flags.InterruptMaster = true
-			}
-		}
-
 		return OPCodeFunctionMap[code].Clock + extCycles
 	} else {
 		if core.Debug {
@@ -238,7 +229,7 @@ func (cpu *CPU) getAF() uint16 {
 	Set value of AF register
 */
 func (cpu *CPU) setAF(val uint16) {
-	cpu.Registers.A = byte(val >> 8)
+	cpu.Registers.A = byte((val & 0xFF00) >> 8)
 	cpu.Registers.F = byte(val & 0xFF)
 }
 
@@ -246,7 +237,7 @@ func (cpu *CPU) setAF(val uint16) {
 	Set value of BC register
 */
 func (cpu *CPU) setBC(val uint16) {
-	cpu.Registers.B = byte(val >> 8)
+	cpu.Registers.B = byte((val & 0xFF00) >> 8)
 	cpu.Registers.C = byte(val & 0xFF)
 }
 
@@ -254,7 +245,7 @@ func (cpu *CPU) setBC(val uint16) {
 	Set value of DE register
 */
 func (cpu *CPU) setDE(val uint16) {
-	cpu.Registers.D = byte(val >> 8)
+	cpu.Registers.D = byte((val & 0xFF00) >> 8)
 	cpu.Registers.E = byte(val & 0xFF)
 }
 
