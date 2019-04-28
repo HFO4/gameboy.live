@@ -160,22 +160,84 @@ type MBC1 struct {
 	RAMBank        [0x8000]byte
 	CurrentRAMBank byte
 	EnableRAM      bool
+	ROMBankingMode bool
 }
 
-func (mbc MBC1) ReadRomBank(address uint16) byte {
+func (mbc *MBC1) ReadRomBank(address uint16) byte {
 	newAddress := address - 0x4000
 	return mbc.rom[newAddress+(uint16(mbc.CurrentROMBank)*0x4000)]
 }
 
-func (mbc MBC1) ReadRamBank(address uint16) byte {
+func (mbc *MBC1) ReadRamBank(address uint16) byte {
 	newAddress := address - 0x4000
 	return mbc.RAMBank[newAddress+(uint16(mbc.CurrentRAMBank)*0x2000)]
 }
-func (mbc MBC1) ReadRom(address uint16) byte {
+func (mbc *MBC1) ReadRom(address uint16) byte {
 	return mbc.rom[address]
 }
-func (mbc MBC1) HandleBanking(address uint16, val byte) {
-	log.Println("banking")
+func (mbc *MBC1) HandleBanking(address uint16, val byte) {
+	// do RAM enabling
+	if address < 0x2000 {
+		mbc.DoRamBankEnable(address, val)
+	} else if (address >= 0x200) && (address < 0x4000) {
+		mbc.DoChangeLoROMBank(val)
+
+	} else if (address >= 0x4000) && (address < 0x6000) {
+		if mbc.ROMBankingMode {
+			mbc.DoChangeHiRomBank(val)
+		} else {
+			mbc.DoRAMBankChange(val)
+		}
+
+	} else if (address >= 0x6000) && (address < 0x8000) {
+		mbc.DoChangeROMRAMMode(val)
+	}
+}
+
+func (mbc *MBC1) DoRamBankEnable(address uint16, val byte) {
+	testData := val & 0xF
+	if testData == 0xA {
+		mbc.ROMBankingMode = true
+	} else if testData == 0x0 {
+		mbc.ROMBankingMode = false
+	}
+}
+
+func (mbc *MBC1) DoChangeLoROMBank(val byte) {
+	lower5 := val & 31
+	mbc.CurrentROMBank &= 224
+	mbc.CurrentROMBank |= lower5
+	if mbc.CurrentROMBank == 0 {
+		mbc.CurrentROMBank++
+	}
+}
+
+func (mbc *MBC1) DoChangeHiRomBank(val byte) {
+	// turn off the upper 3 bits of the current rom
+	mbc.CurrentROMBank &= 31
+
+	// turn off the lower 5 bits of the data
+	val &= 224
+	mbc.CurrentROMBank |= val
+	if mbc.CurrentROMBank == 0 {
+		mbc.CurrentROMBank++
+	}
+}
+
+func (mbc *MBC1) DoRAMBankChange(val byte) {
+	mbc.CurrentRAMBank = val & 0x3
+}
+
+func (mbc *MBC1) DoChangeROMRAMMode(val byte) {
+	newData := val & 0x1
+	if newData == 0 {
+		mbc.ROMBankingMode = true
+	} else {
+		mbc.ROMBankingMode = false
+	}
+	if mbc.ROMBankingMode {
+		mbc.CurrentRAMBank = 0
+	}
 }
 
 /*

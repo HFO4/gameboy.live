@@ -84,14 +84,15 @@ var waveDutyMap = [5]float64{
 	4: 0.5,
 }
 
-var sweepTime = [7]float64{
+var sweepTime = [8]float64{
 	0: 0.0,
-	1: 2.0 / 128,
-	2: 3.0 / 128,
-	3: 4.0 / 128,
-	4: 5.0 / 128,
-	5: 6.0 / 128,
-	6: 7.0 / 128,
+	1: 1.0 / 128,
+	2: 2.0 / 128,
+	3: 3.0 / 128,
+	4: 4.0 / 128,
+	5: 5.0 / 128,
+	6: 6.0 / 128,
+	7: 7.0 / 128,
 }
 
 const secondPerTick = 1 / 44100.0
@@ -213,7 +214,12 @@ func (sound *Sound) Trigger(address uint16, val byte, vram []byte) {
 			//Sweep options
 			sound.Channel1.sweepIncrease = !util.TestBit(sound.VRAMCache[0x00], 3)
 			sound.Channel1.sweepNumber = sound.VRAMCache[0x00] & 0x7
-			sound.Channel1.sweepTime = int(sound.VRAMCache[0x00] & 0x07)
+			sound.Channel1.sweepTime = int((sound.VRAMCache[0x00] & 0x70) >> 4)
+
+			if sound.Channel1.sweepTime != 0 {
+				log.Println((sound.VRAMCache[0x00] & 0x70) >> 4)
+			}
+
 			sound.Channel1.freqInitial = int(sound.Channel1.freqHigh + sound.Channel1.freqLow)
 			sound.Channel1.freqLast = int(sound.Channel1.freqHigh + sound.Channel1.freqLow)
 

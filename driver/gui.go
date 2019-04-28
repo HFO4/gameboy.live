@@ -68,6 +68,10 @@ func (lcd *LCD) UpdateInput() bool {
 	return requestInterrupt
 }
 
+func (lcd *LCD) NewInput(b []byte) {
+
+}
+
 func (lcd *LCD) Run(drawSignal chan bool) {
 	cfg := pixelgl.WindowConfig{
 		Title:  "TETRIS [FPS:60] [CLOCK:4194304]",

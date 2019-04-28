@@ -1,51 +1,72 @@
 package main
 
 import (
+	"fmt"
 	"github.com/HFO4/gbc-in-cloud/driver"
 	"github.com/HFO4/gbc-in-cloud/gb"
 	"github.com/faiface/pixel/pixelgl"
+	"log"
+	"net"
+	"os"
 )
 
-func main() {
-	pixelgl.Run(run)
+func run() {
+	listener, err := net.Listen("tcp", ":2333")
+	if err != nil {
+		fmt.Println("Error listening", err.Error())
+		return //终止程序
+	}
+
+	// 监听并接受来自客户端的连接
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Error accepting", err.Error())
+			return // 终止程序
+		}
+		doServerStuff(conn)
+	}
+	//pixelgl.Run(run)
 }
 
-func run() {
-	//t:=byte(0)
-	//t = util.SetBit(t,1)
-	//t = util.SetBit(t,4)
-	//fmt.Printf("%X",t)
-	//fmt.Printf("%t",util.TestBit(t,0))
-	//fmt.Printf("%t",util.TestBit(t,1))
-	//fmt.Printf("%t",util.TestBit(t,2))
-	//fmt.Printf("%t",util.TestBit(t,3))
-	//fmt.Printf("%t\n",util.TestBit(t,4))
-	//t = util.ClearBit(t,0)
-	//t = util.ClearBit(t,1)
-	//fmt.Printf("%t",util.TestBit(t,0))
-	//fmt.Printf("%t",util.TestBit(t,1))
-	//fmt.Printf("%t",util.TestBit(t,2))
-	//fmt.Printf("%t",util.TestBit(t,3))
-	//fmt.Printf("%t\n",util.TestBit(t,4))
-	//t = util.ClearBit(t,4)
-	//fmt.Printf("%t",util.TestBit(t,0))
-	//fmt.Printf("%t",util.TestBit(t,1))
-	//fmt.Printf("%t",util.TestBit(t,2))
-	//fmt.Printf("%t",util.TestBit(t,3))
-	//fmt.Printf("%t\n",util.TestBit(t,4))
-	Driver := &driver.LCD{}
+func doServerStuff(conn net.Conn) {
+	conn.Write([]byte{255, 253, 34})
+	conn.Write([]byte{255, 250, 34, 1, 0, 255, 240})
+	conn.Write([]byte{0xFF, 0xFB, 0x01})
+	Driver := &driver.ASCII{
+		Conn: conn,
+	}
+	controller := &driver.TelnetController{}
 	core := gb.Core{
 		FPS:           60,
 		Clock:         4194304,
 		Debug:         true,
 		DebugControl:  255,
 		DisplayDriver: Driver,
-		Controller:    Driver,
+		Controller:    controller,
 		DrawSignal:    make(chan bool),
 		SpeedMultiple: 0,
 		ToggleSound:   true,
 	}
-	core.Init("G:\\LearnGo\\gb\\test.gb")
-	go core.DisplayDriver.Run(core.DrawSignal)
-	core.Run()
+	go func() {
+		go core.DisplayDriver.Run(core.DrawSignal)
+		core.Init("G:\\LearnGo\\gb\\test.gb")
+		core.Run()
+	}()
+	for {
+		buf := make([]byte, 512)
+		n, err := conn.Read(buf)
+		if err != nil {
+			fmt.Println("Error reading", err.Error())
+			os.Exit(1)
+			return //终止程序
+		}
+		log.Println(buf[:n])
+		core.Controller.NewInput(buf[:n])
+
+	}
+}
+
+func main() {
+	pixelgl.Run(run)
 }

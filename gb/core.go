@@ -158,11 +158,11 @@ func (core *Core) Update() {
 		cycles := 4
 		if !core.CPU.Halt {
 			cycles = core.ExecuteNextOPCode()
-			cyclesThisUpdate += cycles
 		}
+		cyclesThisUpdate += cycles
 		core.UpdateTimers(cycles)
 		core.UpdateGraphics(cycles)
-		core.Interrupt()
+		cyclesThisUpdate += core.Interrupt()
 	}
 	core.RenderScreen()
 	//log.Println("Render finish")
@@ -171,16 +171,16 @@ func (core *Core) Update() {
 /*
 	Check interrupt.
 */
-func (core *Core) Interrupt() {
+func (core *Core) Interrupt() int {
 
 	if core.CPU.Flags.PendingInterruptEnabled {
 		core.CPU.Flags.PendingInterruptEnabled = false
 		core.CPU.Flags.InterruptMaster = true
-		return
+		return 0
 	}
 
 	if !core.CPU.Flags.InterruptMaster && !core.CPU.Halt {
-		return
+		return 0
 	}
 
 	//if !core.CPU.Flags.InterruptMaster && !core.CPU.Halt{
@@ -195,11 +195,13 @@ func (core *Core) Interrupt() {
 				if util.TestBit(req, uint(i)) {
 					if util.TestBit(enabled, uint(i)) {
 						core.DoInterrupt(i)
+						return 20
 					}
 				}
 			}
 		}
 	}
+	return 0
 }
 
 /*
@@ -398,11 +400,12 @@ func (core *Core) initRom(romPath string) {
 			ROMLength: len(romData),
 		}
 	case 0x01, 0x02, 0x03:
-		core.Cartridge.MBC = MBC1{
+		MBC := MBC1{
 			rom:            romData,
 			CurrentROMBank: 1,
 			CurrentRAMBank: 1,
 		}
+		core.Cartridge.MBC = &MBC
 		core.Cartridge.Props = CartridgeProps{
 			MBCType:   "MBC1",
 			ROMLength: len(romData),
