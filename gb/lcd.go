@@ -1,6 +1,8 @@
 package gb
 
-import "github.com/HFO4/gbc-in-cloud/util"
+import (
+	"github.com/HFO4/gbc-in-cloud/util"
+)
 
 /**
 FF41 - STAT - LCDC Status (R/W)
@@ -49,8 +51,8 @@ func (core *Core) SetLCDStatus() {
 		core.Timer.ScalineCounter = 456
 		core.Memory.MainMemory[0xFF44] = 0
 		status &= 252
-		status = util.SetBit(status, 0)
-		status = util.SetBit(status, 1)
+		status = util.ClearBit(status, 0)
+		status = util.ClearBit(status, 1)
 		core.WriteMemory(0xFF41, status)
 		return
 	}
@@ -68,7 +70,7 @@ func (core *Core) SetLCDStatus() {
 		reqInt = util.TestBit(status, 4)
 	} else {
 		mode2bounds := 456 - 80
-		mode3bounds := 172
+		mode3bounds := mode2bounds - 172
 
 		// mode 2
 		if core.Timer.ScalineCounter >= mode2bounds {
@@ -77,6 +79,7 @@ func (core *Core) SetLCDStatus() {
 			status = util.ClearBit(status, 0)
 			reqInt = util.TestBit(status, 5)
 		} else if core.Timer.ScalineCounter >= mode3bounds {
+			mode = 3
 			// mode 3
 			status = util.SetBit(status, 1)
 			status = util.SetBit(status, 0)
@@ -87,23 +90,24 @@ func (core *Core) SetLCDStatus() {
 			status = util.ClearBit(status, 0)
 			reqInt = util.TestBit(status, 3)
 		}
+	}
 
-		// just entered a new mode so request interupt
-		if reqInt && (mode != currentMode) {
+	// just entered a new mode so request interupt
+	if reqInt && (mode != currentMode) {
+		core.RequestInterrupt(1)
+	}
+
+	// check the conincidence flag
+	if currentLine == core.ReadMemory(0xFF45) {
+		status = util.SetBit(status, 2)
+		if util.TestBit(status, 6) {
 			core.RequestInterrupt(1)
 		}
-
-		// check the conincidence flag
-		if core.ReadMemory(0xFF44) == core.ReadMemory(0xFF45) {
-			status = util.SetBit(status, 2)
-			if util.TestBit(status, 6) {
-				core.RequestInterrupt(1)
-			}
-		} else {
-			status = util.SetBit(status, 2)
-		}
-		core.WriteMemory(0xFF41, status)
+	} else {
+		status = util.ClearBit(status, 2)
 	}
+	core.WriteMemory(0xFF41, status)
+
 }
 
 /*
@@ -128,7 +132,7 @@ func (core *Core) UpdateGraphics(cycles int) {
 		return
 	}
 
-	if core.Timer.ScalineCounter < 0 {
+	if core.Timer.ScalineCounter <= 0 {
 		// time to move onto next scanline
 		core.Memory.MainMemory[0xFF44]++
 

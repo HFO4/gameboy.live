@@ -2,7 +2,6 @@ package gb
 
 import (
 	"bufio"
-	"fmt"
 	"log"
 	"os"
 )
@@ -105,6 +104,7 @@ type MBC interface {
 	ReadRom(uint16) byte
 	ReadRomBank(uint16) byte
 	ReadRamBank(uint16) byte
+	WriteRamBank(uint16, byte)
 	HandleBanking(uint16, byte)
 }
 
@@ -126,6 +126,14 @@ In ROM only cartridge, RAM is not supported.
 */
 func (mbc MBCRom) ReadRamBank(address uint16) byte {
 	return byte(0x00)
+}
+
+/**
+Write a byte from RAM bank.
+In ROM only cartridge, RAM is not supported.
+*/
+func (mbc MBCRom) WriteRamBank(address uint16, data byte) {
+
 }
 
 /**
@@ -164,14 +172,23 @@ type MBC1 struct {
 }
 
 func (mbc *MBC1) ReadRomBank(address uint16) byte {
-	newAddress := address - 0x4000
-	return mbc.rom[newAddress+(uint16(mbc.CurrentROMBank)*0x4000)]
+	newAddress := uint32(address - 0x4000)
+	return mbc.rom[newAddress+uint32(mbc.CurrentROMBank)*0x4000]
 }
 
 func (mbc *MBC1) ReadRamBank(address uint16) byte {
-	newAddress := address - 0x4000
-	return mbc.RAMBank[newAddress+(uint16(mbc.CurrentRAMBank)*0x2000)]
+	newAddress := uint32(address - 0xA000)
+	return mbc.RAMBank[newAddress+(uint32(mbc.CurrentRAMBank)*0x2000)]
 }
+
+func (mbc *MBC1) WriteRamBank(address uint16, data byte) {
+	log.Printf("ADD:%X  VAL:%X  BANK:%d \n", address, data)
+	if mbc.EnableRAM {
+		newAddress := uint32(address - 0xA000)
+		mbc.RAMBank[newAddress+(uint32(mbc.CurrentRAMBank)*0x2000)] = data
+	}
+}
+
 func (mbc *MBC1) ReadRom(address uint16) byte {
 	return mbc.rom[address]
 }
@@ -179,7 +196,7 @@ func (mbc *MBC1) HandleBanking(address uint16, val byte) {
 	// do RAM enabling
 	if address < 0x2000 {
 		mbc.DoRamBankEnable(address, val)
-	} else if (address >= 0x200) && (address < 0x4000) {
+	} else if (address >= 0x2000) && (address < 0x4000) {
 		mbc.DoChangeLoROMBank(val)
 
 	} else if (address >= 0x4000) && (address < 0x6000) {
@@ -197,9 +214,9 @@ func (mbc *MBC1) HandleBanking(address uint16, val byte) {
 func (mbc *MBC1) DoRamBankEnable(address uint16, val byte) {
 	testData := val & 0xF
 	if testData == 0xA {
-		mbc.ROMBankingMode = true
+		mbc.EnableRAM = true
 	} else if testData == 0x0 {
-		mbc.ROMBankingMode = false
+		mbc.EnableRAM = false
 	}
 }
 
@@ -245,10 +262,112 @@ func (mbc *MBC1) DoChangeROMRAMMode(val byte) {
 	====================================
 */
 
-func InitCartridge() {
-	fmt.Println("ss")
+/*
+	====================================
+		MBC3
+*/
+type MBC3 struct {
+	rom            []byte
+	CurrentROMBank byte
+	RAMBank        [0x8000]byte
+	CurrentRAMBank byte
+	EnableRAM      bool
+
+	rtc        []byte
+	latchedRtc []byte
+	latched    bool
 }
 
+func (mbc *MBC3) ReadRomBank(address uint16) byte {
+	newAddress := uint32(address - 0x4000)
+	return mbc.rom[newAddress+uint32(mbc.CurrentROMBank)*0x4000]
+}
+
+func (mbc *MBC3) ReadRamBank(address uint16) byte {
+	if mbc.CurrentRAMBank >= 0x4 {
+		if mbc.latched {
+			return mbc.latchedRtc[mbc.CurrentRAMBank]
+		}
+		return mbc.rtc[mbc.CurrentRAMBank]
+	}
+	newAddress := uint32(address - 0xA000)
+	return mbc.RAMBank[newAddress+(uint32(mbc.CurrentRAMBank)*0x2000)]
+}
+
+func (mbc *MBC3) WriteRamBank(address uint16, data byte) {
+	log.Printf("ADD:%X  VAL:%X  BANK:%d \n", address, data)
+	if mbc.EnableRAM {
+		if mbc.CurrentRAMBank >= 0x4 {
+			mbc.rtc[mbc.CurrentRAMBank] = data
+		} else {
+			newAddress := uint32(address - 0xA000)
+			mbc.RAMBank[newAddress+(uint32(mbc.CurrentRAMBank)*0x2000)] = data
+		}
+	}
+}
+
+func (mbc *MBC3) ReadRom(address uint16) byte {
+	return mbc.rom[address]
+}
+func (mbc *MBC3) HandleBanking(address uint16, val byte) {
+	// do RAM enabling
+	if address < 0x2000 {
+		mbc.DoRamBankEnable(address, val)
+	} else if (address >= 0x2000) && (address < 0x4000) {
+		mbc.DoChangeLoROMBank(val)
+
+	} else if (address >= 0x4000) && (address < 0x6000) {
+		mbc.DoRAMBankChange(val)
+
+	} else if (address >= 0x6000) && (address < 0x8000) {
+		mbc.DoChangeROMRAMMode(val)
+	}
+}
+
+func (mbc *MBC3) DoRamBankEnable(address uint16, val byte) {
+	testData := val & 0xA
+	if testData != 0 {
+		mbc.EnableRAM = true
+	} else if testData == 0x0 {
+		mbc.EnableRAM = false
+	}
+}
+
+func (mbc *MBC3) DoChangeLoROMBank(val byte) {
+	lower5 := val & 0x7F
+	mbc.CurrentROMBank = lower5
+	mbc.CurrentROMBank |= lower5
+	if mbc.CurrentROMBank == 0x00 {
+		mbc.CurrentROMBank++
+	}
+}
+
+func (mbc *MBC3) DoChangeHiRomBank(val byte) {
+	// turn off the upper 3 bits of the current rom
+	mbc.CurrentROMBank &= 31
+
+	// turn off the lower 5 bits of the data
+	val &= 224
+	mbc.CurrentROMBank |= val
+}
+
+func (mbc *MBC3) DoRAMBankChange(val byte) {
+	mbc.CurrentRAMBank = val
+}
+
+func (mbc *MBC3) DoChangeROMRAMMode(val byte) {
+	if val == 0x1 {
+		mbc.latched = false
+	} else if val == 0x0 {
+		mbc.latched = true
+		copy(mbc.rtc, mbc.latchedRtc)
+	}
+}
+
+/*
+		MBC3
+	====================================
+*/
 /*
 	Read cartridge data from file
 */

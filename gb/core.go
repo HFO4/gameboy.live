@@ -93,35 +93,6 @@ func (core *Core) Init(romPath string) {
 	core.Controller.InitStatus(&core.JoypadStatus)
 
 	core.DisplayDriver.Init(&core.Screen)
-	var OpcodeCycles = []int{
-		1, 3, 2, 2, 1, 1, 2, 1, 5, 2, 2, 2, 1, 1, 2, 1, // 0
-		1, 3, 2, 2, 1, 1, 2, 1, 3, 2, 2, 2, 1, 1, 2, 1, // 1
-		2, 3, 2, 2, 1, 1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 1, // 2
-		2, 3, 2, 2, 3, 3, 3, 1, 2, 2, 2, 2, 1, 1, 2, 1, // 3
-		1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 4
-		1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 5
-		1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 6
-		2, 2, 2, 2, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, // 7
-		1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 8
-		1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // 9
-		1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // a
-		1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, // b
-		2, 3, 3, 4, 3, 4, 2, 4, 2, 4, 3, 1, 3, 6, 2, 4, // c
-		2, 3, 3, 0, 3, 4, 2, 4, 2, 4, 3, 0, 3, 0, 2, 4, // d
-		3, 3, 2, 0, 0, 4, 2, 4, 4, 1, 4, 0, 0, 0, 2, 4, // e
-		3, 3, 2, 1, 0, 4, 2, 4, 3, 2, 4, 1, 0, 0, 2, 4, // f
-	} //0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
-
-	for i := 0; i <= 0xf; i++ {
-		for y := 0; y <= 0xf; y++ {
-			if OpcodeCycles[i*16+y]*4 != OPCodeFunctionMap[i*16+y].Clock && OPCodeFunctionMap[i*16+y].Clock != 0 {
-				log.Fatalf("%X", i*16+y)
-			}
-			if OPCodeFunctionMap[i*16+y].Clock == 0 {
-				log.Printf("%X\n", i*16+y)
-			}
-		}
-	}
 
 	if core.Debug {
 		core.DebugControl = 0x0100
@@ -403,7 +374,7 @@ func (core *Core) initRom(romPath string) {
 		MBC := MBC1{
 			rom:            romData,
 			CurrentROMBank: 1,
-			CurrentRAMBank: 1,
+			CurrentRAMBank: 0,
 		}
 		core.Cartridge.MBC = &MBC
 		core.Cartridge.Props = CartridgeProps{
@@ -413,7 +384,16 @@ func (core *Core) initRom(romPath string) {
 	case 0x05, 0x06:
 		log.Println("mbc2")
 	case 0x0F, 0x10, 0x11, 0x12, 0x13:
-		log.Println("mbc3")
+		MBC := MBC3{
+			rom:            romData,
+			CurrentROMBank: 1,
+			CurrentRAMBank: 0,
+		}
+		core.Cartridge.MBC = &MBC
+		core.Cartridge.Props = CartridgeProps{
+			MBCType:   "MBC3",
+			ROMLength: len(romData),
+		}
 	case 0x15, 0x16, 0x17:
 		log.Println("mbc4")
 	case 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E:
