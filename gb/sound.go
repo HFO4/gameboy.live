@@ -128,7 +128,7 @@ func (sound *Sound) Play() {
 		log.Println("[Warning] Failed to init sound speaker")
 	}
 
-	stream := beep.Mixer{}
+	stream := &beep.Mixer{}
 	stream.Add(sound.Channel1)
 	stream.Add(sound.Channel2)
 	stream.Add(sound.Channel3)
@@ -139,7 +139,7 @@ func (sound *Sound) Play() {
 	//	done <- true
 	//}))
 	volume := &effects.Volume{
-		Streamer: &stream,
+		Streamer: stream,
 		Base:     2,
 		Volume:   -3,
 	}

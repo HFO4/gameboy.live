@@ -86,7 +86,7 @@ var RamBankMap = map[byte]uint8{
 }
 
 type Cartridge struct {
-	Props CartridgeProps
+	Props *CartridgeProps
 	MBC   MBC
 }
 
@@ -124,7 +124,7 @@ type MBCRom struct {
 Read a byte from RAM bank.
 In ROM only cartridge, RAM is not supported.
 */
-func (mbc MBCRom) ReadRamBank(address uint16) byte {
+func (mbc *MBCRom) ReadRamBank(address uint16) byte {
 	return byte(0x00)
 }
 
@@ -132,7 +132,7 @@ func (mbc MBCRom) ReadRamBank(address uint16) byte {
 Write a byte from RAM bank.
 In ROM only cartridge, RAM is not supported.
 */
-func (mbc MBCRom) WriteRamBank(address uint16, data byte) {
+func (mbc *MBCRom) WriteRamBank(address uint16, data byte) {
 
 }
 
@@ -140,18 +140,18 @@ func (mbc MBCRom) WriteRamBank(address uint16, data byte) {
 Read a byte from ROM bank.
 In ROM only cartridge, ROM banking is not supported.
 */
-func (mbc MBCRom) ReadRomBank(address uint16) byte {
+func (mbc *MBCRom) ReadRomBank(address uint16) byte {
 	return mbc.rom[address]
 }
 
 /**
 Read a byte from raw rom via address
 */
-func (mbc MBCRom) ReadRom(address uint16) byte {
+func (mbc *MBCRom) ReadRom(address uint16) byte {
 	return mbc.rom[address]
 }
 
-func (mbc MBCRom) HandleBanking(address uint16, val byte) {
+func (mbc *MBCRom) HandleBanking(address uint16, val byte) {
 }
 
 /*	Single ROM without MBC
@@ -165,7 +165,7 @@ func (mbc MBCRom) HandleBanking(address uint16, val byte) {
 type MBC1 struct {
 	rom            []byte
 	CurrentROMBank byte
-	RAMBank        [0x8000]byte
+	RAMBank        []byte
 	CurrentRAMBank byte
 	EnableRAM      bool
 	ROMBankingMode bool
@@ -182,7 +182,6 @@ func (mbc *MBC1) ReadRamBank(address uint16) byte {
 }
 
 func (mbc *MBC1) WriteRamBank(address uint16, data byte) {
-	log.Printf("ADD:%X  VAL:%X  BANK:%d \n", address, data)
 	if mbc.EnableRAM {
 		newAddress := uint32(address - 0xA000)
 		mbc.RAMBank[newAddress+(uint32(mbc.CurrentRAMBank)*0x2000)] = data
@@ -295,7 +294,6 @@ func (mbc *MBC3) ReadRamBank(address uint16) byte {
 }
 
 func (mbc *MBC3) WriteRamBank(address uint16, data byte) {
-	log.Printf("ADD:%X  VAL:%X  BANK:%d \n", address, data)
 	if mbc.EnableRAM {
 		if mbc.CurrentRAMBank >= 0x4 {
 			mbc.rtc[mbc.CurrentRAMBank] = data
@@ -310,6 +308,7 @@ func (mbc *MBC3) ReadRom(address uint16) byte {
 	return mbc.rom[address]
 }
 func (mbc *MBC3) HandleBanking(address uint16, val byte) {
+	//log.Printf("[Memory Banking] RAM:0x%X ROM:0x%X \n",mbc.CurrentRAMBank,mbc.CurrentROMBank)
 	// do RAM enabling
 	if address < 0x2000 {
 		mbc.DoRamBankEnable(address, val)

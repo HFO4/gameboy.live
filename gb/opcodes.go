@@ -2239,8 +2239,8 @@ func (core *Core) OP47() int {
 */
 func (core *Core) OPCB() int {
 	nextIns := core.getParameter8()
-	if cbMap[nextIns] != nil {
-		cbMap[nextIns]()
+	if core.cbMap[nextIns] != nil {
+		core.cbMap[nextIns]()
 		return CBCycles[nextIns] * 4
 	} else {
 		log.Fatalf("Undefined CB Opcode: %X \n", nextIns)

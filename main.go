@@ -1,86 +1,57 @@
 package main
 
 import (
+	"fmt"
 	"github.com/HFO4/gbc-in-cloud/driver"
 	"github.com/HFO4/gbc-in-cloud/gb"
 	"github.com/faiface/pixel/pixelgl"
 )
 
 //func run() {
-//	listener, err := net.Listen("tcp", ":2333")
-//	if err != nil {
-//		fmt.Println("Error listening", err.Error())
-//		return //终止程序
-//	}
-//
-//	// 监听并接受来自客户端的连接
-//	for {
-//		conn, err := listener.Accept()
-//		if err != nil {
-//			fmt.Println("Error accepting", err.Error())
-//			return // 终止程序
-//		}
-//		doServerStuff(conn)
-//	}
-//	//pixelgl.Run(run)
-//}
-//
-//func doServerStuff(conn net.Conn) {
-//	conn.Write([]byte{255, 253, 34})
-//	conn.Write([]byte{255, 250, 34, 1, 0, 255, 240})
-//	conn.Write([]byte{0xFF, 0xFB, 0x01})
-//	Driver := &driver.ASCII{
-//		Conn: conn,
-//	}
-//	controller := &driver.TelnetController{}
-//	core := gb.Core{
-//		FPS:           60,
-//		Clock:         4194304,
-//		Debug:         true,
-//		DebugControl:  255,
-//		DisplayDriver: Driver,
-//		Controller:    controller,
-//		DrawSignal:    make(chan bool),
-//		SpeedMultiple: 0,
-//		ToggleSound:   true,
-//	}
-//	go func() {
-//		go core.DisplayDriver.Run(core.DrawSignal)
-//		core.Init("G:\\LearnGo\\gb\\Donkey Kong Land III (U) [S][!].gb")
-//		core.Run()
-//	}()
-//	for {
-//		buf := make([]byte, 512)
-//		n, err := conn.Read(buf)
-//		if err != nil {
-//			fmt.Println("Error reading", err.Error())
-//			os.Exit(1)
-//			return //终止程序
-//		}
-//		log.Println(buf[:n])
-//		core.Controller.NewInput(buf[:n])
-//
-//	}
+//	server.Run("2333")
 //}
 
 func main() {
 	pixelgl.Run(run)
+
 }
 
 func run() {
-	Driver := &driver.LCD{}
-	core := gb.Core{
-		FPS:           60,
-		Clock:         4194304,
-		Debug:         true,
-		DebugControl:  255,
-		DisplayDriver: Driver,
-		Controller:    Driver,
-		DrawSignal:    make(chan bool),
-		SpeedMultiple: 0,
-		ToggleSound:   true,
-	}
-	core.Init("G:\\LearnGo\\gb\\Pokemon - Blue Version (UE) [S][!].gb")
+	chan1 := make(chan bool)
+	Driver := new(driver.LCD)
+	core := new(gb.Core)
+	core.FPS = 60
+	core.Clock = 4194304
+	core.Debug = true
+	core.DebugControl = 255
+	core.DisplayDriver = Driver
+	core.Controller = Driver
+	core.DrawSignal = make(chan bool)
+	core.SpeedMultiple = 0
+	core.ToggleSound = true
+	core.Memory = new(gb.Memory)
+	core.Init("G:\\LearnGo\\gb\\Kirby's Dream Land 2 (USA, Europe) (SGB Enhanced).gb")
 	go core.DisplayDriver.Run(core.DrawSignal)
-	core.Run()
+	go core.Run()
+	var t byte
+	fmt.Scanf("%d", &t)
+
+	Driver2 := new(driver.LCD)
+	core2 := new(gb.Core)
+	core2.FPS = 60
+	core2.Clock = 4194304
+	core2.Debug = false
+	core2.DebugControl = 0
+	core2.DisplayDriver = Driver2
+	core2.Controller = Driver2
+	core2.DrawSignal = make(chan bool)
+	core2.SpeedMultiple = 0
+	core2.ToggleSound = true
+	core2.Memory = new(gb.Memory)
+	core2.Init("G:\\LearnGo\\gb\\Kirby's Dream Land 2 (USA, Europe) (SGB Enhanced).gb")
+	go core2.DisplayDriver.Run(core2.DrawSignal)
+	go core2.Run()
+
+	<-chan1
+
 }

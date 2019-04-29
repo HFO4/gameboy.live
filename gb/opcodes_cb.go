@@ -4,8 +4,6 @@ import (
 	"github.com/HFO4/gbc-in-cloud/util"
 )
 
-var cbMap = [0x100](func()){}
-
 var CBCycles = []int{
 	2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 0
 	2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // 1
@@ -54,118 +52,118 @@ func (core *Core) initCB() {
 
 		registerID := i
 
-		cbMap[0x00+i] = func() {
+		core.cbMap[0x00+i] = func() {
 			core.RLC(getters[registerID], setters[registerID])
 		}
 
-		cbMap[0x08+i] = func() {
+		core.cbMap[0x08+i] = func() {
 			core.RRC(getters[registerID], setters[registerID])
 		}
 
-		cbMap[0x10+i] = func() {
+		core.cbMap[0x10+i] = func() {
 			core.RL(getters[registerID], setters[registerID])
 		}
 
-		cbMap[0x18+i] = func() {
+		core.cbMap[0x18+i] = func() {
 			core.RR(getters[registerID], setters[registerID])
 		}
 
-		cbMap[0x20+i] = func() {
+		core.cbMap[0x20+i] = func() {
 			core.SLA(getters[registerID], setters[registerID])
 		}
-		cbMap[0x28+i] = func() {
+		core.cbMap[0x28+i] = func() {
 			core.SRA(getters[registerID], setters[registerID])
 		}
 
-		cbMap[0x30+i] = func() {
+		core.cbMap[0x30+i] = func() {
 			core.SWAP(getters[registerID], setters[registerID])
 		}
 
-		cbMap[0x38+i] = func() {
+		core.cbMap[0x38+i] = func() {
 			core.SRL(getters[registerID], setters[registerID])
 		}
 
 		/*
 			RES commands
 		*/
-		cbMap[0x80+i] = func() {
+		core.cbMap[0x80+i] = func() {
 			setters[registerID](util.ClearBit(getters[registerID](), 0))
 		}
-		cbMap[0x88+i] = func() {
+		core.cbMap[0x88+i] = func() {
 			setters[registerID](util.ClearBit(getters[registerID](), 1))
 		}
-		cbMap[0x90+i] = func() {
+		core.cbMap[0x90+i] = func() {
 			setters[registerID](util.ClearBit(getters[registerID](), 2))
 		}
-		cbMap[0x98+i] = func() {
+		core.cbMap[0x98+i] = func() {
 			setters[registerID](util.ClearBit(getters[registerID](), 3))
 		}
-		cbMap[0xA0+i] = func() {
+		core.cbMap[0xA0+i] = func() {
 			setters[registerID](util.ClearBit(getters[registerID](), 4))
 		}
-		cbMap[0xA8+i] = func() {
+		core.cbMap[0xA8+i] = func() {
 			setters[registerID](util.ClearBit(getters[registerID](), 5))
 		}
-		cbMap[0xB0+i] = func() {
+		core.cbMap[0xB0+i] = func() {
 			setters[registerID](util.ClearBit(getters[registerID](), 6))
 		}
-		cbMap[0xB8+i] = func() {
+		core.cbMap[0xB8+i] = func() {
 			setters[registerID](util.ClearBit(getters[registerID](), 7))
 		}
 
 		/*
 			BIT commands
 		*/
-		cbMap[0x40+i] = func() {
+		core.cbMap[0x40+i] = func() {
 			core.BIT(0, getters[registerID])
 		}
-		cbMap[0x48+i] = func() {
+		core.cbMap[0x48+i] = func() {
 			core.BIT(1, getters[registerID])
 		}
-		cbMap[0x50+i] = func() {
+		core.cbMap[0x50+i] = func() {
 			core.BIT(2, getters[registerID])
 		}
-		cbMap[0x58+i] = func() {
+		core.cbMap[0x58+i] = func() {
 			core.BIT(3, getters[registerID])
 		}
-		cbMap[0x60+i] = func() {
+		core.cbMap[0x60+i] = func() {
 			core.BIT(4, getters[registerID])
 		}
-		cbMap[0x68+i] = func() {
+		core.cbMap[0x68+i] = func() {
 			core.BIT(5, getters[registerID])
 		}
-		cbMap[0x70+i] = func() {
+		core.cbMap[0x70+i] = func() {
 			core.BIT(6, getters[registerID])
 		}
-		cbMap[0x78+i] = func() {
+		core.cbMap[0x78+i] = func() {
 			core.BIT(7, getters[registerID])
 		}
 
 		/*
 			Set commands
 		*/
-		cbMap[0xC0+i] = func() {
+		core.cbMap[0xC0+i] = func() {
 			setters[registerID](util.SetBit(getters[registerID](), 0))
 		}
-		cbMap[0xC8+i] = func() {
+		core.cbMap[0xC8+i] = func() {
 			setters[registerID](util.SetBit(getters[registerID](), 1))
 		}
-		cbMap[0xD0+i] = func() {
+		core.cbMap[0xD0+i] = func() {
 			setters[registerID](util.SetBit(getters[registerID](), 2))
 		}
-		cbMap[0xD8+i] = func() {
+		core.cbMap[0xD8+i] = func() {
 			setters[registerID](util.SetBit(getters[registerID](), 3))
 		}
-		cbMap[0xE0+i] = func() {
+		core.cbMap[0xE0+i] = func() {
 			setters[registerID](util.SetBit(getters[registerID](), 4))
 		}
-		cbMap[0xE8+i] = func() {
+		core.cbMap[0xE8+i] = func() {
 			setters[registerID](util.SetBit(getters[registerID](), 5))
 		}
-		cbMap[0xF0+i] = func() {
+		core.cbMap[0xF0+i] = func() {
 			setters[registerID](util.SetBit(getters[registerID](), 6))
 		}
-		cbMap[0xF8+i] = func() {
+		core.cbMap[0xF8+i] = func() {
 			setters[registerID](util.SetBit(getters[registerID](), 7))
 		}
 	}

@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"log"
 	"math"
 	"net"
 )
@@ -10,9 +11,11 @@ type ASCII struct {
 	Conn       net.Conn
 	FrameCount int
 	last       [160][144]bool
+	title      string
 }
 
-func (stream *ASCII) Init(pixels *[160][144][3]uint8) {
+func (stream *ASCII) Init(pixels *[160][144][3]uint8, title string) {
+	stream.title = title
 	stream.pixels = pixels
 
 }
@@ -20,18 +23,20 @@ func (stream *ASCII) Init(pixels *[160][144][3]uint8) {
 func (stream *ASCII) Run(drawSignal chan bool) {
 
 	for {
-		<-drawSignal
+		if !<-drawSignal {
+			log.Println("chan closed")
+			break
+		}
 		stream.FrameCount++
-
 		if stream.FrameCount%6 == 0 {
 			pixels := [160][144]bool{}
 			for y := 0; y < 144; y++ {
 				for x := 0; x < 160; x++ {
 					switch stream.pixels[x][y][0] {
 					case 255, 0xCC:
-						pixels[x][y] = false
-					default:
 						pixels[x][y] = true
+					default:
+						pixels[x][y] = false
 					}
 				}
 			}
@@ -66,7 +71,11 @@ func (stream *ASCII) renderAscii(pixels [160][144]bool) {
 				chars[charPosition] |= pixelMap[y%4][x%2]
 			}
 			if x%2 == 1 && y%4 == 3 {
-				ret += string(chars[charPosition])
+				if chars[charPosition] == 0x2880 {
+					ret += " "
+				} else {
+					ret += string(chars[charPosition])
+				}
 				if x%159 == 0 {
 					ret += "\r\n"
 				}

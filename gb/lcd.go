@@ -143,11 +143,13 @@ func (core *Core) UpdateGraphics(cycles int) {
 
 		// we have entered vertical blank period
 		if currentLine == 144 {
+			core.DrawScanLine()
 			core.RequestInterrupt(0)
 		} else if currentLine > 153 {
 			// if gone past scanline 153 reset to 0
 			core.Memory.MainMemory[0xFF44] = 0
 		} else if currentLine < 144 {
+			//log.Println(currentLine)
 			core.DrawScanLine()
 		}
 

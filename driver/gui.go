@@ -16,10 +16,12 @@ type LCD struct {
 	pixelMap *pixel.PictureData
 
 	inputStatus *byte
+	title       string
 }
 
-func (lcd *LCD) Init(pixels *[160][144][3]uint8) {
+func (lcd *LCD) Init(pixels *[160][144][3]uint8, title string) {
 	lcd.pixels = pixels
+	lcd.title = title
 	log.Println("[Display] Initialize GUI display")
 	lcd.pixelMap = pixel.MakePictureData(pixel.R(0, 0, 160, 144))
 
@@ -74,8 +76,8 @@ func (lcd *LCD) NewInput(b []byte) {
 
 func (lcd *LCD) Run(drawSignal chan bool) {
 	cfg := pixelgl.WindowConfig{
-		Title:  "TETRIS [FPS:60] [CLOCK:4194304]",
-		Bounds: pixel.R(0, 0, 160*3, 144*3),
+		Title:  lcd.title,
+		Bounds: pixel.R(0, 0, 160*3, 142*3),
 		VSync:  false,
 	}
 	win, err := pixelgl.NewWindow(cfg)

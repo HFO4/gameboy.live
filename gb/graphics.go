@@ -97,7 +97,7 @@ func (core *Core) RenderSprites() {
 				colour := core.GetColour(colourNum, colourAddress)
 
 				// white is transparent for sprites.
-				if colour == 0 {
+				if colourNum == 0 {
 					continue
 				}
 
@@ -134,9 +134,9 @@ func (core *Core) RenderSprites() {
 					continue
 				}
 
-				core.Screen[pixel][scanline][0] = red
-				core.Screen[pixel][scanline][1] = green
-				core.Screen[pixel][scanline][2] = blue
+				core.Screen[pixel][scanline-1][0] = red
+				core.Screen[pixel][scanline-1][1] = green
+				core.Screen[pixel][scanline-1][2] = blue
 
 			}
 		}
@@ -323,9 +323,9 @@ func (core *Core) RenderTiles() {
 		if (finally < 0) || (finally > 143) || (pixel < 0) || (pixel > 159) {
 			continue
 		}
-		core.Screen[pixel][finally][0] = red
-		core.Screen[pixel][finally][1] = green
-		core.Screen[pixel][finally][2] = blue
+		core.Screen[pixel][finally-1][0] = red
+		core.Screen[pixel][finally-1][1] = green
+		core.Screen[pixel][finally-1][2] = blue
 	}
 
 }

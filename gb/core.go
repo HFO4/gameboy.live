@@ -10,8 +10,9 @@ import (
 type Core struct {
 	Cartridge Cartridge
 	CPU       CPU
-	Memory    Memory
+	Memory    *Memory
 	Sound     Sound
+	cbMap     [0x100](func())
 
 	/*
 	   +++++++++++++++++++++++
@@ -68,7 +69,9 @@ type Core struct {
 	/*
 		Timer
 	*/
-	Timer Timer
+	Timer     Timer
+	Exit      bool
+	GameTitle string
 }
 
 type Timer struct {
@@ -78,7 +81,6 @@ type Timer struct {
 }
 
 func (core *Core) Init(romPath string) {
-
 	//todo 去掉注释
 	//core.SpeedMultiple = 0
 	core.Timer.TimerCounter = 0
@@ -92,7 +94,7 @@ func (core *Core) Init(romPath string) {
 	core.initCB()
 	core.Controller.InitStatus(&core.JoypadStatus)
 
-	core.DisplayDriver.Init(&core.Screen)
+	core.DisplayDriver.Init(&core.Screen, core.GameTitle)
 
 	if core.Debug {
 		core.DebugControl = 0x0100
@@ -106,9 +108,16 @@ func (core *Core) Init(romPath string) {
 func (core *Core) Run() {
 	ticker := time.NewTicker(time.Second / time.Duration(core.FPS))
 	for range ticker.C {
+		if core.DebugControl == 1 {
+			log.Println("s")
+		}
 		core.Update()
 		if core.Controller.UpdateInput() {
 			core.RequestInterrupt(4)
+		}
+		if core.Exit {
+			close(core.DrawSignal)
+			return
 		}
 	}
 }
@@ -329,7 +338,7 @@ func (core *Core) initRom(romPath string) {
 		ex-title bytes is described below.
 	*/
 	log.Printf("[Cartridge] Game title: %s\n", string(romData[0x134:0x143]))
-
+	core.GameTitle = string(romData[0x134:0x143])
 	/*
 		0143 - CGB Flag
 
@@ -354,10 +363,9 @@ func (core *Core) initRom(romPath string) {
 	/*
 		Init Cartridge struct according to cartridge type
 	*/
-	core.Cartridge = Cartridge{}
 	switch CartridgeType {
 	case 0x00, 0x08, 0x09, 0x0B, 0x0C, 0x0D:
-		core.Cartridge.MBC = MBCRom{
+		core.Cartridge.MBC = &MBCRom{
 			rom: romData,
 			//Specify which ROM bank is currently loaded into internal memory address 0x4000-0x7FFF.
 			//As ROM Bank 0 is fixed into memory address 0x0-0x3FFF this variable should never be 0,
@@ -366,38 +374,39 @@ func (core *Core) initRom(romPath string) {
 			//Specify which RAM bank is currently loaded into internal memory address 0xA000-0xBFFF.
 			CurrentRAMBank: 1,
 		}
-		core.Cartridge.Props = CartridgeProps{
+		core.Cartridge.Props = &CartridgeProps{
 			MBCType:   "rom",
 			ROMLength: len(romData),
 		}
 	case 0x01, 0x02, 0x03:
-		MBC := MBC1{
+		MBC := &MBC1{
 			rom:            romData,
 			CurrentROMBank: 1,
 			CurrentRAMBank: 0,
+			RAMBank:        make([]byte, 0x8000),
 		}
-		core.Cartridge.MBC = &MBC
-		core.Cartridge.Props = CartridgeProps{
+		core.Cartridge.MBC = MBC
+		core.Cartridge.Props = &CartridgeProps{
 			MBCType:   "MBC1",
 			ROMLength: len(romData),
 		}
 	case 0x05, 0x06:
 		log.Println("mbc2")
 	case 0x0F, 0x10, 0x11, 0x12, 0x13:
-		MBC := MBC3{
+		MBC := &MBC3{
 			rom:            romData,
 			CurrentROMBank: 1,
 			CurrentRAMBank: 0,
 		}
-		core.Cartridge.MBC = &MBC
-		core.Cartridge.Props = CartridgeProps{
+		core.Cartridge.MBC = MBC
+		core.Cartridge.Props = &CartridgeProps{
 			MBCType:   "MBC3",
 			ROMLength: len(romData),
 		}
-	case 0x15, 0x16, 0x17:
-		log.Println("mbc4")
-	case 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E:
-		log.Println("mbc5")
+	//case 0x15, 0x16, 0x17:
+	//	log.Println("mbc4")
+	//case 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E:
+	//	log.Println("mbc5")
 	default:
 		log.Fatal("[Cartridge] Unsupported MBC type")
 	}
