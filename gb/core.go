@@ -29,13 +29,11 @@ type Core struct {
 	*/
 
 	//Screen pixel data
-	Screen [160][144][3]uint8
-
+	Screen     [160][144][3]uint8
 	ScanLineBG [160]bool
-
 	//Display driver
 	DisplayDriver driver.DisplayDriver
-
+	// Signal to tell display driver to draw
 	DrawSignal chan bool
 
 	/*
@@ -79,15 +77,14 @@ type Core struct {
 type Timer struct {
 	TimerCounter    int
 	DividerRegister int
-	ScalineCounter  int
+	ScanlineCounter int
 }
 
+// Initialize emulator
 func (core *Core) Init(romPath string) {
-	//todo 去掉注释
-	//core.SpeedMultiple = 0
+	core.SpeedMultiple = 0
 	core.Timer.TimerCounter = 0
 	core.Timer.DividerRegister = 0
-
 	core.JoypadStatus = 0xFF
 
 	core.initRom(romPath)
@@ -95,9 +92,12 @@ func (core *Core) Init(romPath string) {
 	core.initCPU()
 	core.initCB()
 	core.Controller.InitStatus(&core.JoypadStatus)
-
 	core.DisplayDriver.Init(&core.Screen, core.GameTitle)
 
+	/*
+		If debug mode is ON, we set the DebugControl to 0x0100,
+		where the ROM code was firstly executed.
+	*/
 	if core.Debug {
 		core.DebugControl = 0x0100
 	}
@@ -107,13 +107,17 @@ func (core *Core) Init(romPath string) {
 	}
 }
 
+// Start the emulation loop
 func (core *Core) Run() {
+	// Execution interval depends on the FPS
 	ticker := time.NewTicker(time.Second / time.Duration(core.FPS))
 	for range ticker.C {
 		core.Update()
+		// Check controller input interrupt
 		if core.Controller.UpdateInput() {
 			core.RequestInterrupt(4)
 		}
+		// Check exit signal
 		if core.Exit {
 			close(core.DrawSignal)
 			return
@@ -126,15 +130,19 @@ func (core *Core) Run() {
 */
 func (core *Core) Update() {
 	cyclesThisUpdate := 0
+
+	/*
+		Gameboy's CPU speed is 4.194304MHz, so in every update loop,
+		we need to execute `Clock / FPS` cycles. Some Gameboy Color games might
+		use double speed mode, under these, `SpeedMultiple` will be set to `1`.
+	*/
 	for cyclesThisUpdate < ((core.SpeedMultiple+1)*core.Clock)/core.FPS {
-		//if core.Debug {
-		//	if uint16(core.DebugControl) <= core.CPU.Registers.PC-1 {
-		//		fmt.Scanf("%X", &core.DebugControl)
-		//		core.StepExe = true
-		//	}
-		//}
-		//TODO halt
 		cycles := 4
+
+		/*
+			Check whether CPU is halted, when this happen, only an interrupt
+			can stop halting.
+		*/
 		if !core.CPU.Halt {
 			cycles = core.ExecuteNextOPCode()
 		}
@@ -144,7 +152,6 @@ func (core *Core) Update() {
 		cyclesThisUpdate += core.Interrupt()
 	}
 	core.RenderScreen()
-	//log.Println("Render finish")
 }
 
 /*
@@ -152,26 +159,52 @@ func (core *Core) Update() {
 */
 func (core *Core) Interrupt() int {
 
+	/*
+		If `EI`(Enable Interrupt) instruction was executed, Interrupt Mater Flag will
+		be enable in next execution cycle.
+	*/
 	if core.CPU.Flags.PendingInterruptEnabled {
 		core.CPU.Flags.PendingInterruptEnabled = false
 		core.CPU.Flags.InterruptMaster = true
 		return 0
 	}
 
+	/*
+		If the CPU is neither interrupted nor halted,
+		stop interrupt checking and return.
+	*/
 	if !core.CPU.Flags.InterruptMaster && !core.CPU.Halt {
 		return 0
 	}
 
-	//if !core.CPU.Flags.InterruptMaster && !core.CPU.Halt{
-	//	return
-	//}
 	//Check the Interrupt Master Enable Flag
 	if core.CPU.Flags.InterruptMaster || core.CPU.Halt {
+		/*
+			FF0F - IF - Interrupt Flag (R/W)
+			  Bit 0: V-Blank  Interrupt Request (INT 40h)  (1=Request)
+			  Bit 1: LCD STAT Interrupt Request (INT 48h)  (1=Request)
+			  Bit 2: Timer    Interrupt Request (INT 50h)  (1=Request)
+			  Bit 3: Serial   Interrupt Request (INT 58h)  (1=Request)
+			  Bit 4: Joypad   Interrupt Request (INT 60h)  (1=Request)
+
+		*/
 		req := core.ReadMemory(0xFF0F)
+		/*
+			FFFF - IE - Interrupt Enable (R/W)
+			  Bit 0: V-Blank  Interrupt Enable  (INT 40h)  (1=Enable)
+			  Bit 1: LCD STAT Interrupt Enable  (INT 48h)  (1=Enable)
+			  Bit 2: Timer    Interrupt Enable  (INT 50h)  (1=Enable)
+			  Bit 3: Serial   Interrupt Enable  (INT 58h)  (1=Enable)
+			  Bit 4: Joypad   Interrupt Enable  (INT 60h)  (1=Enable)
+		*/
 		enabled := core.ReadMemory(0xFFFF)
 		if req > 0 {
+			/*
+
+			 */
 			for i := 0; i < 5; i++ {
 				if util.TestBit(req, uint(i)) {
+					// Check whether this interrupt request is enabled in IE.
 					if util.TestBit(enabled, uint(i)) {
 						core.DoInterrupt(i)
 						return 20
@@ -184,7 +217,7 @@ func (core *Core) Interrupt() int {
 }
 
 /*
-	Perform interrupt
+	Performing an interrupt
 */
 func (core *Core) DoInterrupt(id int) {
 
@@ -193,20 +226,23 @@ func (core *Core) DoInterrupt(id int) {
 		return
 	}
 
-	//Turn off the Interrupt Master Enable Flag
+	// Turn off the Interrupt Master Enable Flag
 	core.CPU.Flags.InterruptMaster = false
 	core.CPU.Halt = false
 
 	req := core.ReadMemory(0xFF0F)
 	req = util.ClearBit(req, uint(id))
 	core.WriteMemory(0xFF0F, req)
-	//We must save the current execution address by pushing it onto the stack
+	// We must save the current execution address by pushing it onto the stack
 	core.StackPush(core.CPU.Registers.PC)
-	//Set the PC to correspond interrupt process program:
-	// 	V-Blank: 0x40
-	//	LCD: 0x48
-	//	TIMER: 0x50
-	//	JOYPAD: 0x60
+
+	/*
+		Set the PC to correspond interrupt process program:
+			V-Blank: 0x40
+			LCD: 0x48
+			TIMER: 0x50
+			JOYPAD: 0x60
+	*/
 	switch id {
 	case 0:
 		core.CPU.Registers.PC = 0x40
@@ -228,7 +264,6 @@ func (core *Core) DoInterrupt(id int) {
 */
 func (core *Core) UpdateTimers(cycles int) {
 	core.DoDividerRegister(cycles)
-
 	if core.IsClockEnabled() {
 		core.Timer.TimerCounter += cycles
 		if core.Timer.TimerCounter >= core.GetClockFreqCount() {
@@ -253,9 +288,6 @@ func (core *Core) RequestInterrupt(id int) {
 	req := core.ReadMemory(0xFF0F)
 	req = util.SetBit(req, uint(id))
 	core.WriteMemory(0xFF0F, req)
-	if core.Debug {
-		//log.Printf("[Debug] New interrupt requested: \nID:%d  IF:0x%X  IME:%t \n", id, req, core.CPU.Flags.InterruptMaster)
-	}
 }
 
 /*

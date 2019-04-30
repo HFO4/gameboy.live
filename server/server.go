@@ -16,11 +16,13 @@ type GameInfo struct {
 	Path  string
 }
 
+// Run Running the cloud gaming server
 func (server *StreamServer) Run() {
 	listener, err := net.Listen("tcp", ":"+strconv.Itoa(server.Port))
 	if err != nil {
 		log.Fatal("Error listening", err.Error())
 	}
+	log.Println("Listen port:", server.Port)
 
 	i := 0
 	for {

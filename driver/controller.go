@@ -6,20 +6,24 @@ import (
 )
 
 type ControllerDriver interface {
+	// Initialize controller status
 	InitStatus(*byte)
+	// Update input status for emulator, called by the emulator
 	UpdateInput() bool
+	// Update input status for the controller itself
 	NewInput([]byte)
 }
 
 type TelnetController struct {
 	inputStatus *byte
-
-	Keymap [8]KeyMap
+	Keymap      [8]KeyMap
 }
 
 type KeyMap struct {
-	LastPress   int64
-	LaskChecked int64
+	// Timestamp when the key was last pressed
+	LastPress int64
+	// Timestamp when the emulator last check the input status
+	LastChecked int64
 }
 
 func (tel *TelnetController) InitStatus(statusPointer *byte) {
@@ -32,12 +36,16 @@ func (tel *TelnetController) UpdateInput() bool {
 	statusCopy = *tel.inputStatus
 	timeNow := time.Now().UnixNano() / int64(time.Millisecond)
 	for key, offset := range tel.Keymap {
+		/*
+			If the key was pressed in 200ms,
+			We consider player "hold" the key.
+		*/
 		if timeNow-offset.LastPress <= 200 {
 			statusCopy = util.ClearBit(statusCopy, uint(key))
-			if timeNow-offset.LaskChecked >= 100 {
+			if timeNow-offset.LastChecked >= 100 {
 				requestInterrupt = true
 			}
-			offset.LaskChecked = timeNow
+			offset.LastChecked = timeNow
 		} else {
 			statusCopy = util.SetBit(statusCopy, uint(key))
 		}
@@ -48,6 +56,10 @@ func (tel *TelnetController) UpdateInput() bool {
 
 func (tel *TelnetController) NewInput(data []byte) {
 
+	/*
+		Key map for the input key byte and the control
+		bit in Gameboy register.
+	*/
 	keyDataMap := map[byte]int{
 		65:  2,
 		66:  3,

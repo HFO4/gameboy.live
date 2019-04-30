@@ -10,6 +10,7 @@ import (
 	"strconv"
 )
 
+// Player Single player model
 type Player struct {
 	Conn     net.Conn
 	Emulator *gb.Core
@@ -18,11 +19,12 @@ type Player struct {
 	GameList *[]GameInfo
 }
 
+// Send TELNET options
 func (player *Player) InitTelnet() bool {
-	//Send telnet options
+	// Send telnet options
 	_, err := player.Conn.Write([]byte{255, 253, 34})
 	_, err = player.Conn.Write([]byte{255, 250, 34, 1, 0, 255, 240})
-	//NOT ECHO
+	// NOT ECHO
 	_, err = player.Conn.Write([]byte{0xFF, 0xFB, 0x01})
 	if err != nil {
 		return false
@@ -36,8 +38,11 @@ func (player *Player) Init() bool {
 		Conn: player.Conn,
 	}
 
+	// Set the controller driver to TELNET controller
 	controller := &driver.TelnetController{}
 	core := &gb.Core{
+		// Terminal gaming dose not require high FPS,
+		// 10 FPS is a decent choice in most situation.
 		FPS:           10,
 		Clock:         4194304,
 		Debug:         false,
@@ -54,6 +59,7 @@ func (player *Player) Init() bool {
 	return true
 }
 
+// Generate welcome and game selection screen
 func (player *Player) RenderWelcomScreen() []byte {
 	res := "\033[H"
 	res += "Welcome to " + fmt.Stringer(aurora.Bold(aurora.Green("Gameboy.Live"))).String() + ", you can enjoy GAMEBOY games in your terminal with \"cloud gaming\" experience.\r\n"
@@ -97,18 +103,21 @@ func (player *Player) Welcome() int {
 		}
 
 		switch inputKey[len(inputKey)-1] {
+		// Up key pressed
 		case 65:
 			if player.Selected == 0 {
 				player.Selected = len(*player.GameList) - 1
 			} else {
 				player.Selected--
 			}
+		// Down key pressed
 		case 66:
 			if player.Selected == len(*player.GameList)-1 {
 				player.Selected = 0
 			} else {
 				player.Selected++
 			}
+		// Enter key pressed
 		case 10, 0:
 			return player.Selected
 		}
@@ -117,10 +126,15 @@ func (player *Player) Welcome() int {
 
 }
 
+/*
+	Generate the control instruction screen,
+	ascii art by Joan Stark.
+*/
+
 func (player *Player) Instruction() int {
-	ret := "Here's the key instruction, press " + fmt.Stringer(aurora.Gray(1-1, "Enter").BgGray(24-1)).String() + " key to enter the game\r\n\r\n"
+	ret := "Here's the key instruction, press " + fmt.Stringer(aurora.Gray(1-1, "Enter").BgGray(24-1)).String() + " key to enter the game, " + fmt.Stringer(aurora.Gray(1-1, " Q ").BgGray(24-1)).String() + " to quit the game.\r\n\r\n"
 	ret += "                      __________________________\r\n" + "                     |OFFo oON                  |\r\n" + "                     | .----------------------. |\r\n" + "                     | |  .----------------.  | |\r\n" + "                     | |  |                |  | |\r\n" + "                     | |))|                |  | |\r\n" + "                     | |  |                |  | |\r\n" + "                     | |  |                |  | |\r\n" + "                     | |  |                |  | |\r\n" + "                     | |  |                |  | |\r\n" + "                     | |  |                |  | |\r\n" + "                     | |  '----------------'  | |\r\n" + "                     | |__GAME BOY____________/ |\r\n" + "    Keyboard:Up↑ <--------+     ________        |\r\n" + "                     |    +    (Nintendo)       |\r\n" + "                     |  _| |_   \"\"\"\"\"\"\"\"   .-.  |\r\n" + "  Keyboard:Left← <----+[_   _]---+    .-. ( +---------> Keyboard:Z\r\n" + "                     |   |_|     |   (   ) '-'  |\r\n" + "                     |    +      |    '-+   A   |\r\n" + "  Keyboard:Down↓ <--------+ +----+     B+-------------> Keyboard:X\r\n" + "                     |      |   ___   ___       |\r\n" + "                     |      |  (___) (___)  ,., |\r\n" + "Keyboard:Right→ <-----------+ select st+rt ;:;: |\r\n" + "                     |           +     |  ,;:;' /\r\n" + "                  jgs|           |     | ,:;:'.'\r\n" + "                     '-----------------------`\r\n" + "                                 |     |\r\n" + "           Keyboard:Backspace <--+     +-> Keyboard:Enter\r\n"
-	//Clean screen
+	// Clean screen
 	_, err := player.Conn.Write([]byte("\033[2J\033[H" + ret))
 	if err != nil {
 		return -1
@@ -132,6 +146,8 @@ func (player *Player) Instruction() int {
 		if err != nil {
 			return -1
 		}
+
+		// Enter key pressed
 		if inputKey[len(inputKey)-1] == 0 || inputKey[len(inputKey)-1] == 10 {
 			return 1
 		}
@@ -143,7 +159,7 @@ func (player *Player) Serve() {
 	game := player.Welcome()
 
 	if game < 0 {
-		log.Println("User quite")
+		log.Println("User quit")
 		return
 	}
 
@@ -154,6 +170,7 @@ func (player *Player) Serve() {
 
 	player.Init()
 
+	// Set the display driver to TELNET
 	go player.Emulator.DisplayDriver.Run(player.Emulator.DrawSignal)
 	player.Emulator.Init((*player.GameList)[player.Selected].Path)
 	go player.Emulator.Run()
@@ -166,6 +183,7 @@ func (player *Player) Serve() {
 			player.Emulator.Exit = true
 			return
 		}
+		// If "Q" was pressed ,close the connection
 		if buf[n-1] == 113 {
 			log.Println("User quit")
 			player.Emulator.Exit = true
@@ -175,6 +193,7 @@ func (player *Player) Serve() {
 			}
 			return
 		}
+		// Handle user input
 		player.Emulator.Controller.NewInput(buf[:n])
 	}
 }

@@ -114,9 +114,12 @@ type MBC interface {
 	Single ROM without MBC
 */
 type MBCRom struct {
-	rom            []byte
+	// ROM data
+	rom []byte
+	// Current ROM-Bank number
 	CurrentROMBank byte
 	RAMBank        [0x8000]byte
+	// Current RAM-Bank number
 	CurrentRAMBank byte
 	EnableRAM      bool
 }
@@ -155,7 +158,7 @@ func (mbc *MBCRom) ReadRom(address uint16) byte {
 func (mbc *MBCRom) HandleBanking(address uint16, val byte) {
 }
 
-/*	Single ROM without MBC
+/*	Single ROM without MBC  END
 	=====================================
 */
 
@@ -172,11 +175,26 @@ type MBC1 struct {
 	ROMBankingMode bool
 }
 
+/*
+	4000-7FFF - ROM Bank 01-7F (Read Only)
+		This area may contain any of the further 16KByte banks of the ROM,
+		allowing to address up to 125 ROM Banks (almost 2MByte). As described below,
+		bank numbers 20h, 40h, and 60h cannot be used, resulting in the odd amount of
+		125 banks.
+*/
 func (mbc *MBC1) ReadRomBank(address uint16) byte {
 	newAddress := uint32(address - 0x4000)
 	return mbc.rom[newAddress+uint32(mbc.CurrentROMBank)*0x4000]
 }
 
+/*
+	A000-BFFF - RAM Bank 00-03, if any (Read/Write)
+		This area is used to address external RAM in the cartridge (if any).
+		External RAM is often battery buffered, allowing to store game positions
+		or high score tables, even if the gameboy is turned off, or if the cartridge
+		is removed from the gameboy. Available RAM sizes are: 2KByte (at A000-A7FF),
+		8KByte (at A000-BFFF), and 32KByte (in form of four 8K banks at A000-BFFF).
+*/
 func (mbc *MBC1) ReadRamBank(address uint16) byte {
 	newAddress := uint32(address - 0xA000)
 	return mbc.RAMBank[newAddress+(uint32(mbc.CurrentRAMBank)*0x2000)]
@@ -192,14 +210,44 @@ func (mbc *MBC1) WriteRamBank(address uint16, data byte) {
 func (mbc *MBC1) ReadRom(address uint16) byte {
 	return mbc.rom[address]
 }
+
 func (mbc *MBC1) HandleBanking(address uint16, val byte) {
 	// do RAM enabling
 	if address < 0x2000 {
+		/*
+			0000-1FFF - RAM Enable (Write Only)
+				Before external RAM can be read or written, it must be enabled by writing
+				to this address space. It is recommended to disable external RAM
+				after accessing it, in order to protect its contents from damage
+				during power down of the gameboy. Usually the following values are used:
+				  00h  Disable RAM (default)
+				  0Ah  Enable RAM
+				Practically any value with 0Ah in the lower 4 bits enables RAM,
+				and any other value disables RAM.
+
+		*/
 		mbc.DoRamBankEnable(address, val)
 	} else if (address >= 0x2000) && (address < 0x4000) {
-		mbc.DoChangeLoROMBank(val)
+		/*
+			2000-3FFF - ROM Bank Number (Write Only)
+				Writing to this address space selects the lower 5 bits of the
+				ROM Bank Number (in range 01-1Fh). When 00h is written,
+				the MBC translates that to bank 01h also. That doesn't harm so far,
+				because ROM Bank 00h can be always directly accessed by reading from 0000-3FFF.
+				But (when using the register below to specify the upper ROM Bank bits), the same happens
+				for Bank 20h, 40h, and 60h. Any attempt to address these ROM Banks will select
+				Bank 21h, 41h, and 61h instead.
 
+		*/
+		mbc.DoChangeLoROMBank(val)
 	} else if (address >= 0x4000) && (address < 0x6000) {
+		/*
+			4000-5FFF - RAM Bank Number - or -
+			Upper Bits of ROM Bank Number (Write Only)
+				This 2bit register can be used to select a RAM Bank in range
+				from 00-03h, or to specify the upper two bits (Bit 5-6) of the
+				ROM Bank number, depending on the current ROM/RAM Mode. (See below.)
+		*/
 		if mbc.ROMBankingMode {
 			mbc.DoChangeHiRomBank(val)
 		} else {
@@ -207,6 +255,16 @@ func (mbc *MBC1) HandleBanking(address uint16, val byte) {
 		}
 
 	} else if (address >= 0x6000) && (address < 0x8000) {
+		/*
+			6000-7FFF - ROM/RAM Mode Select (Write Only)
+				This 1bit Register selects whether the two bits of the above register should
+				be used as upper two bits of the ROM Bank, or as RAM Bank Number.
+					00h = ROM Banking Mode (up to 8KByte RAM, 2MByte ROM) (default)
+					01h = RAM Banking Mode (up to 32KByte RAM, 512KByte ROM)
+				The program may freely switch between both modes, the only limitiation
+				is that only RAM Bank 00h can be used during Mode 0, and only ROM
+				Banks 00-1Fh can be used during Mode 1.
+		*/
 		mbc.DoChangeROMRAMMode(val)
 	}
 }
@@ -258,7 +316,7 @@ func (mbc *MBC1) DoChangeROMRAMMode(val byte) {
 }
 
 /*
-		MBC1
+		MBC1  END
 	====================================
 */
 
@@ -298,8 +356,23 @@ func (mbc *MBC2) ReadRom(address uint16) byte {
 func (mbc *MBC2) HandleBanking(address uint16, val byte) {
 	// do RAM enabling
 	if address < 0x2000 {
+		/*
+			0000-1FFF - RAM Enable (Write Only)
+				The least significant bit of the upper address byte must be zero
+				to enable/disable cart RAM. For example the following addresses can be
+				used to enable/disable cart RAM: 0000-00FF, 0200-02FF, 0400-04FF, ...,
+				1E00-1EFF.
+				The suggested address range to use for MBC2 ram enable/disable
+				is 0000-00FF.
+
+		*/
 		mbc.DoRamBankEnable(address, val)
 	} else if (address >= 0x2000) && (address < 0x4000) {
+		/*
+			2000-3FFF - ROM Bank Number (Write Only)
+				Writing a value (XXXXBBBB - X = Don't cares, B = bank select bits)
+				into 2000-3FFF area will select an appropriate ROM bank at 4000-7FFF.
+		*/
 		mbc.DoChangeLoROMBank(val)
 
 	} else if (address >= 0x4000) && (address < 0x6000) {
@@ -364,7 +437,7 @@ func (mbc *MBC2) DoChangeROMRAMMode(val byte) {
 }
 
 /*
-		MBC2
+		MBC2  END
 	====================================
 */
 
@@ -415,17 +488,46 @@ func (mbc *MBC3) ReadRom(address uint16) byte {
 	return mbc.rom[address]
 }
 func (mbc *MBC3) HandleBanking(address uint16, val byte) {
-	//log.Printf("[Memory Banking] RAM:0x%X ROM:0x%X \n",mbc.CurrentRAMBank,mbc.CurrentROMBank)
-	// do RAM enabling
 	if address < 0x2000 {
+		/*
+			0000-1FFF - RAM and Timer Enable (Write Only)
+				Mostly the same as for MBC1, a value of 0Ah will enable
+				reading and writing to external RAM - and to the RTC Registers!
+				A value of 00h will disable either.
+		*/
 		mbc.DoRamBankEnable(address, val)
 	} else if (address >= 0x2000) && (address < 0x4000) {
+		/*
+			2000-3FFF - ROM Bank Number (Write Only)
+				Same as for MBC1, except that the whole 7 bits of the RAM Bank
+				Number are written directly to this address. As for the MBC1, writing
+				a value of 00h, will select Bank 01h instead. All other values 01-7Fh
+				select the corresponding ROM Banks.
+		*/
 		mbc.DoChangeLoROMBank(val)
 
 	} else if (address >= 0x4000) && (address < 0x6000) {
+		/*
+			4000-5FFF - RAM Bank Number - or - RTC Register Select (Write Only)
+				As for the MBC1s RAM Banking Mode, writing a value in range for 00h-03h
+				maps the corresponding external RAM Bank (if any) into memory at A000-BFFF.
+				When writing a value of 08h-0Ch, this will map the corresponding RTC register
+				into memory at A000-BFFF. That register could then be read/written by accessing any
+				address in that area, typically that is done by using address A000.
+		*/
 		mbc.DoRAMBankChange(val)
 
 	} else if (address >= 0x6000) && (address < 0x8000) {
+		/*
+			6000-7FFF - Latch Clock Data (Write Only)
+				When writing 00h, and then 01h to this register,
+				the current time becomes latched into the RTC registers.
+				The latched data will not change until it becomes latched again,
+				by repeating the write 00h->01h procedure.
+				This is supposed for <reading> from the RTC registers.
+				It is proof to read the latched (frozen) time from the RTC registers,
+				while the clock itself continues to tick in background.
+		*/
 		mbc.DoChangeROMRAMMode(val)
 	}
 }
@@ -471,7 +573,7 @@ func (mbc *MBC3) DoChangeROMRAMMode(val byte) {
 }
 
 /*
-		MBC3
+		MBC3  END
 	====================================
 */
 /*

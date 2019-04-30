@@ -1,54 +1,110 @@
 package main
 
-import "github.com/HFO4/gbc-in-cloud/server"
+import (
+	"bufio"
+	"encoding/json"
+	"flag"
+	"github.com/HFO4/gbc-in-cloud/driver"
+	"github.com/HFO4/gbc-in-cloud/gb"
+	"github.com/HFO4/gbc-in-cloud/server"
+	"github.com/faiface/pixel/pixelgl"
+	"log"
+	"os"
+)
 
-func run() {
+var (
+	h bool
+
+	GUIMode    bool
+	ServerMode bool
+
+	ConfigPath string
+	ListenPort int
+	ROMPath    string
+	SoundOn    bool
+	FPS        int
+	Debug      bool
+)
+
+func init() {
+	flag.BoolVar(&h, "h", false, "This help")
+	flag.BoolVar(&GUIMode, "g", true, "Play specific game in GUI mode")
+	flag.BoolVar(&ServerMode, "s", false, "Start a cloud-gaming server")
+	flag.BoolVar(&SoundOn, "m", true, "Turn on sound in GUI mode")
+	flag.BoolVar(&Debug, "d", false, "Use Debugger in GUI mode")
+	flag.IntVar(&ListenPort, "p", 1989, "Set the `port` for the cloud-gaming server")
+	flag.IntVar(&FPS, "f", 60, "Set the `FPS` in GUI mode")
+	flag.StringVar(&ConfigPath, "c", "", "Set the game option list `config` file path")
+	flag.StringVar(&ROMPath, "r", "", "Set `ROM` file path to be played in GUI mode")
+}
+
+func startGUI() {
+	Driver := new(driver.LCD)
+	core := new(gb.Core)
+	core.FPS = FPS
+	core.Clock = 4194304
+	core.Debug = Debug
+	core.DisplayDriver = Driver
+	core.Controller = Driver
+	core.DrawSignal = make(chan bool)
+	core.SpeedMultiple = 0
+	core.ToggleSound = SoundOn
+	core.Init(ROMPath)
+	go core.DisplayDriver.Run(core.DrawSignal)
+	core.Run()
+}
+
+func runServer() {
+	if ConfigPath == "" {
+		log.Fatal("[Error] Game list not specified")
+	}
+
+	// Read config file
+	configFile, err := os.Open(ConfigPath)
+	defer configFile.Close()
+	if err != nil {
+		log.Fatal("[Error] Failed to read game list config file,", err)
+	}
+	stats, statsErr := configFile.Stat()
+	if statsErr != nil {
+		log.Fatal(statsErr)
+	}
+	var size = stats.Size()
+	gameListStr := make([]byte, size)
+	bufReader := bufio.NewReader(configFile)
+	_, err = bufReader.Read(gameListStr)
+
 	streamServer := new(server.StreamServer)
-	streamServer.Port = 2333
-	gameList := []server.GameInfo{
-		0: {
-			Title: "Tetris",
-			Path:  "test.gb",
-		},
-		1: {
-			Title: "Dr. Mario",
-			Path:  "Dr. Mario (JU) (V1.1).gb",
-		},
-		2: {
-			Title: "Legend of Zelda - Link's Awakening",
-			Path:  "Legend of Zelda, The - Link's Awakening (U) (V1.2) [!].gb",
-		},
-		3: {
-			Title: "Pokemon - Blue",
-			Path:  "Pokemon - Blue Version (UE) [S][!].gb",
-		},
-		4: {
-			Title: "Super Mario Land",
-			Path:  "Super Mario Land (JUE) (V1.1) [!].gb",
-		},
-		5: {
-			Title: "Super Mario Land 2",
-			Path:  "Super Mario Land 2 - 6 Golden Coins (UE) (V1.2) [!].gb",
-		},
-		6: {
-			Title: "Kirby's Dream Land 2",
-			Path:  "Kirby's Dream Land 2 (USA, Europe) (SGB Enhanced).gb",
-		},
-		7: {
-			Title: "F-1 Race",
-			Path:  "F-1 Race (JUE) (V1.1) [!].gb",
-		},
+	streamServer.Port = ListenPort
+	var gameList []server.GameInfo
+	err = json.Unmarshal(gameListStr, &gameList)
+	if err != nil {
+		log.Fatal("Unable to decode game list config file.")
 	}
 	streamServer.GameList = gameList
 	streamServer.Run()
 }
 
-//func main() {
-//	pixelgl.Run(run)
-//
-//}
+func run() {
+	flag.Parse()
+	if h {
+		flag.Usage()
+		return
+	}
+
+	if ServerMode {
+		runServer()
+		return
+	}
+
+	if GUIMode {
+		startGUI()
+		return
+	}
+}
+
 func main() {
-	run()
+	pixelgl.Run(run)
 
 }
 

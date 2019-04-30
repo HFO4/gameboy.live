@@ -1,6 +1,7 @@
 package gb
 
 import (
+	"fmt"
 	"github.com/HFO4/gbc-in-cloud/util"
 	"log"
 )
@@ -41,7 +42,7 @@ type Registers struct {
 	  5    h     -   -    Half Carry Flag (BCD)
 	  4    cy    C   NC   Carry Flag
 	  3-0  -     -   -    Not used (always zero)
-	Conatins the result from the recent instruction which has affected flags.
+	Contains the result from the recent instruction which has affected flags.
 */
 type Flags struct {
 	Zero      bool
@@ -96,50 +97,40 @@ func (core *Core) ExecuteNextOPCode() int {
 }
 
 /*
+	Break execution and print register/dump memory information for debug purpose.
+*/
+func (core *Core) Break(code byte) {
+	af := core.CPU.getAF()
+	bc := core.CPU.getBC()
+	de := core.CPU.getDE()
+	hl := core.CPU.Registers.HL
+	sp := core.CPU.Registers.SP
+	pc := core.CPU.Registers.PC - 1
+	lcdc := core.Memory.MainMemory[0xFF40]
+	IF := core.Memory.MainMemory[0xFF0F]
+	IE := core.Memory.MainMemory[0xFFFF]
+	core.Memory.Dump("memory.dump")
+	log.Printf("[Debug] \n\033[34m[OP:%s]\nAF:%04X  BC:%04X  DE:%04X  HL:%04X  SP:%04X\nPC:%04X  LCDC:%02X  IF:%02X    IE:%02X    IME:%t\nLCD:%X \033[0m", OPCodeFunctionMap[code].OP, af, bc, de, hl, sp, pc, lcdc, IF, IE, core.CPU.Flags.InterruptMaster, core.DebugControl)
+}
+
+/*
 	Execute given OPCode and return used CPU clock
 */
 func (core *Core) ExecuteOPCode(code byte) int {
-
 	if OPCodeFunctionMap[code].Clock != 0 {
-
-		//if core.CPU.Registers.PC-1==0x02ed{
-		//	core.DebugControl=1
-		//}
-		//var t byte
-		//if core.DebugControl == 1 {
-		//	af := core.CPU.getAF()
-		//	bc := core.CPU.getBC()
-		//	de := core.CPU.getDE()
-		//	hl := core.CPU.Registers.HL
-		//	sp := core.CPU.Registers.SP
-		//	pc := core.CPU.Registers.PC - 1
-		//	lcdc := core.Memory.MainMemory[0xFF40]
-		//	IF := core.Memory.MainMemory[0xFF0F]
-		//	IE := core.Memory.MainMemory[0xFFFF]
-		//	log.Printf("[Debug] \n\033[34m[OP:%s]\nAF:%04X  BC:%04X  DE:%04X  HL:%04X  SP:%04X\nPC:%04X  LCDC:%02X  IF:%02X    IE:%02X    IME:%t\nLCD:%X \033[0m", OPCodeFunctionMap[code].OP, af, bc, de, hl, sp, pc, lcdc, IF, IE, core.CPU.Flags.InterruptMaster, core.DebugControl)
-		//
-		//	//fmt.Scanf("%X", &t)
-		//}
+		if core.DebugControl == core.CPU.Registers.PC-1 {
+			core.Break(code)
+			_, err := fmt.Scanf("%X", &core.DebugControl)
+			if err != nil {
+				core.CPU.Registers.PC = 0
+			}
+		}
 		var extCycles int
-		//if core.CPU.Halt{
-		//	extCycles = 4
-		//}else{
 		extCycles = OPCodeFunctionMap[code].Func(core)
-		//}
-		//core.StepExe++
 		return OPCodeFunctionMap[code].Clock + extCycles
 	} else {
 		if core.Debug {
-			af := core.CPU.getAF()
-			bc := core.CPU.getBC()
-			de := core.CPU.getDE()
-			hl := core.CPU.Registers.HL
-			sp := core.CPU.Registers.SP
-			pc := core.CPU.Registers.PC - 1
-			lcdc := core.Memory.MainMemory[0xFF40]
-			IF := core.Memory.MainMemory[0xFF0F]
-			IE := core.Memory.MainMemory[0xFFFF]
-			log.Printf("[Debug] \n\033[34m[OP:%s]\nAF:%04X  BC:%04X  DE:%04X  HL:%04X  SP:%04X\nPC:%04X  LCDC:%02X  IF:%02X    IE:%02X    IME:%t\033[0m", OPCodeFunctionMap[code].OP, af, bc, de, hl, sp, pc, lcdc, IF, IE, core.CPU.Flags.InterruptMaster)
+			core.Break(code)
 		}
 		log.Fatalf("Unable to resolve OPCode:%X   PC:%X\n", code, core.CPU.Registers.PC-1)
 		return 0
@@ -147,7 +138,7 @@ func (core *Core) ExecuteOPCode(code byte) int {
 }
 
 /*
-	Get 16bit parameter after opcode
+	Get 16bit parameter after OpCode
 */
 func (core *Core) getParameter16() uint16 {
 	b1 := uint16(core.ReadMemory(core.CPU.Registers.PC))
@@ -263,6 +254,7 @@ func (cpu *CPU) getDE() uint16 {
 
 /*
 	Update Low 8bit of AF register
+	TODO: maybe this operation is useless in non-debug mode.
 */
 func (cpu *CPU) updateAFLow() {
 	newAF := cpu.Registers.F

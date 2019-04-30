@@ -33,7 +33,7 @@ func (lcd *LCD) InitStatus(statusPointer *byte) {
 
 func (lcd *LCD) UpdateInput() bool {
 	// Mapping from keys to GB index.
-	// ref :https://github.com/Humpheh/goboy/blob/master/pkg/gbio/iopixel/pixels.go
+	// Reference :https://github.com/Humpheh/goboy/blob/master/pkg/gbio/iopixel/pixels.go
 	var keyMap = map[pixelgl.Button]byte{
 		// A button
 		pixelgl.KeyZ: 4,
@@ -93,6 +93,7 @@ func (lcd *LCD) Run(drawSignal chan bool) {
 	}()
 
 	for {
+		// drawSignal was sent by the emulator
 		<-drawSignal
 		for y := 0; y < 144; y++ {
 			for x := 0; x < 160; x++ {
