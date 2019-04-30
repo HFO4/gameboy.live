@@ -124,3 +124,19 @@ There are still many places to be perfected：
 - [ ] Game saving & restore in emulator level
 
 ## Testing
+
+![Testing result](https://github.com/HFO4/gameboy.live/raw/master/doc/Testing.jpg)
+
+## Contribution
+
+This emulator is just for learning and entertainment purpose. There are still many places to be perfected. Any suggestions or contribution is welcomed!
+
+## Reference
+
+* [Pan Docs](http://bgb.bircd.org/pandocs.htm)
+* [http://www.codeslinger.co.uk/pages/projects/gameboy/beginning.html](http://www.codeslinger.co.uk/pages/projects/gameboy/beginning.html)
+* [http://www.devrs.com/gb/files/GBCPU_Instr.html](http://www.devrs.com/gb/files/GBCPU_Instr.html)
+* [https://github.com/Humpheh/goboy](https://github.com/Humpheh/goboy)
+* [The Ultimate Game Boy Talk (33c3)](https://www.youtube.com/watch?v=HyzD8pNlpwI)
+* [http://gameboy.mongenel.com/dmg/asmmemmap.html](http://gameboy.mongenel.com/dmg/asmmemmap.html)
+* ......
