@@ -118,7 +118,7 @@ func (core *Core) Break(code byte) {
 */
 func (core *Core) ExecuteOPCode(code byte) int {
 	if OPCodeFunctionMap[code].Clock != 0 {
-		if core.DebugControl == core.CPU.Registers.PC-1 {
+		if core.DebugControl == core.CPU.Registers.PC-1 && core.Debug {
 			core.Break(code)
 			_, err := fmt.Scanf("%X", &core.DebugControl)
 			if err != nil {
