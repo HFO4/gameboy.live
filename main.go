@@ -105,27 +105,4 @@ func run() {
 
 func main() {
 	pixelgl.Run(run)
-
 }
-
-//func run() {
-//	chan1 := make(chan bool)
-//	Driver := new(driver.LCD)
-//	core := new(gb.Core)
-//	core.FPS = 60
-//	core.Clock = 4194304
-//	core.Debug = true
-//	core.DebugControl = 255
-//	core.DisplayDriver = Driver
-//	core.Controller = Driver
-//	core.DrawSignal = make(chan bool)
-//	core.SpeedMultiple = 0
-//	core.ToggleSound = true
-//	core.Init("G:\\LearnGo\\gb\\Wario Land - Super Mario Land 3 (World).gb")
-//	go core.DisplayDriver.Run(core.DrawSignal)
-//	go core.Run()
-//	//var t byte
-//
-//	<-chan1
-//
-//}
