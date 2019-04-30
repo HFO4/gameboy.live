@@ -10,7 +10,7 @@ import (
 type Core struct {
 	Cartridge Cartridge
 	CPU       CPU
-	Memory    *Memory
+	Memory    Memory
 	Sound     Sound
 	cbMap     [0x100](func())
 
@@ -30,6 +30,8 @@ type Core struct {
 
 	//Screen pixel data
 	Screen [160][144][3]uint8
+
+	ScanLineBG [160]bool
 
 	//Display driver
 	DisplayDriver driver.DisplayDriver
@@ -108,9 +110,6 @@ func (core *Core) Init(romPath string) {
 func (core *Core) Run() {
 	ticker := time.NewTicker(time.Second / time.Duration(core.FPS))
 	for range ticker.C {
-		if core.DebugControl == 1 {
-			log.Println("s")
-		}
 		core.Update()
 		if core.Controller.UpdateInput() {
 			core.RequestInterrupt(4)
@@ -391,7 +390,17 @@ func (core *Core) initRom(romPath string) {
 			ROMLength: len(romData),
 		}
 	case 0x05, 0x06:
-		log.Println("mbc2")
+		MBC := &MBC2{
+			rom:            romData,
+			CurrentROMBank: 1,
+			CurrentRAMBank: 0,
+			RAMBank:        make([]byte, 0x8000),
+		}
+		core.Cartridge.MBC = MBC
+		core.Cartridge.Props = &CartridgeProps{
+			MBCType:   "MBC2",
+			ROMLength: len(romData),
+		}
 	case 0x0F, 0x10, 0x11, 0x12, 0x13:
 		MBC := &MBC3{
 			rom:            romData,

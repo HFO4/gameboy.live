@@ -28,20 +28,18 @@ func (stream *ASCII) Run(drawSignal chan bool) {
 			break
 		}
 		stream.FrameCount++
-		if stream.FrameCount%6 == 0 {
-			pixels := [160][144]bool{}
-			for y := 0; y < 144; y++ {
-				for x := 0; x < 160; x++ {
-					switch stream.pixels[x][y][0] {
-					case 255, 0xCC:
-						pixels[x][y] = true
-					default:
-						pixels[x][y] = false
-					}
+		pixels := [160][144]bool{}
+		for y := 0; y < 144; y++ {
+			for x := 0; x < 160; x++ {
+				switch stream.pixels[x][y][0] {
+				case 255, 0xCC:
+					pixels[x][y] = true
+				default:
+					pixels[x][y] = false
 				}
 			}
-			stream.renderAscii(pixels)
 		}
+		stream.renderAscii(pixels)
 
 	}
 }

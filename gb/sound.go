@@ -216,10 +216,6 @@ func (sound *Sound) Trigger(address uint16, val byte, vram []byte) {
 			sound.Channel1.sweepNumber = sound.VRAMCache[0x00] & 0x7
 			sound.Channel1.sweepTime = int((sound.VRAMCache[0x00] & 0x70) >> 4)
 
-			if sound.Channel1.sweepTime != 0 {
-				log.Println((sound.VRAMCache[0x00] & 0x70) >> 4)
-			}
-
 			sound.Channel1.freqInitial = int(sound.Channel1.freqHigh + sound.Channel1.freqLow)
 			sound.Channel1.freqLast = int(sound.Channel1.freqHigh + sound.Channel1.freqLow)
 

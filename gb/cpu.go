@@ -106,20 +106,20 @@ func (core *Core) ExecuteOPCode(code byte) int {
 		//	core.DebugControl=1
 		//}
 		//var t byte
-		if core.DebugControl == 1 {
-			af := core.CPU.getAF()
-			bc := core.CPU.getBC()
-			de := core.CPU.getDE()
-			hl := core.CPU.Registers.HL
-			sp := core.CPU.Registers.SP
-			pc := core.CPU.Registers.PC - 1
-			lcdc := core.Memory.MainMemory[0xFF40]
-			IF := core.Memory.MainMemory[0xFF0F]
-			IE := core.Memory.MainMemory[0xFFFF]
-			log.Printf("[Debug] \n\033[34m[OP:%s]\nAF:%04X  BC:%04X  DE:%04X  HL:%04X  SP:%04X\nPC:%04X  LCDC:%02X  IF:%02X    IE:%02X    IME:%t\nLCD:%X \033[0m", OPCodeFunctionMap[code].OP, af, bc, de, hl, sp, pc, lcdc, IF, IE, core.CPU.Flags.InterruptMaster, core.DebugControl)
-
-			//fmt.Scanf("%X", &t)
-		}
+		//if core.DebugControl == 1 {
+		//	af := core.CPU.getAF()
+		//	bc := core.CPU.getBC()
+		//	de := core.CPU.getDE()
+		//	hl := core.CPU.Registers.HL
+		//	sp := core.CPU.Registers.SP
+		//	pc := core.CPU.Registers.PC - 1
+		//	lcdc := core.Memory.MainMemory[0xFF40]
+		//	IF := core.Memory.MainMemory[0xFF0F]
+		//	IE := core.Memory.MainMemory[0xFFFF]
+		//	log.Printf("[Debug] \n\033[34m[OP:%s]\nAF:%04X  BC:%04X  DE:%04X  HL:%04X  SP:%04X\nPC:%04X  LCDC:%02X  IF:%02X    IE:%02X    IME:%t\nLCD:%X \033[0m", OPCodeFunctionMap[code].OP, af, bc, de, hl, sp, pc, lcdc, IF, IE, core.CPU.Flags.InterruptMaster, core.DebugControl)
+		//
+		//	//fmt.Scanf("%X", &t)
+		//}
 		var extCycles int
 		//if core.CPU.Halt{
 		//	extCycles = 4

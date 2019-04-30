@@ -53,7 +53,7 @@ func (core *Core) RenderSprites() {
 
 		yFlip := util.TestBit(attributes, 6)
 		xFlip := util.TestBit(attributes, 5)
-
+		priority := !util.TestBit(attributes, 7)
 		scanline := core.ReadMemory(0xFF44)
 
 		ysize := 8
@@ -134,9 +134,11 @@ func (core *Core) RenderSprites() {
 					continue
 				}
 
-				core.Screen[pixel][scanline-1][0] = red
-				core.Screen[pixel][scanline-1][1] = green
-				core.Screen[pixel][scanline-1][2] = blue
+				if core.ScanLineBG[pixel] || priority {
+					core.Screen[pixel][scanline-1][0] = red
+					core.Screen[pixel][scanline-1][1] = green
+					core.Screen[pixel][scanline-1][2] = blue
+				}
 
 			}
 		}
@@ -323,6 +325,14 @@ func (core *Core) RenderTiles() {
 		if (finally < 0) || (finally > 143) || (pixel < 0) || (pixel > 159) {
 			continue
 		}
+
+		// Store whether the background is white
+		if colour == 0 {
+			core.ScanLineBG[pixel] = true
+		} else {
+			core.ScanLineBG[pixel] = false
+		}
+
 		core.Screen[pixel][finally-1][0] = red
 		core.Screen[pixel][finally-1][1] = green
 		core.Screen[pixel][finally-1][2] = blue

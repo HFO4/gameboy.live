@@ -2,6 +2,7 @@ package gb
 
 import (
 	"bufio"
+	"github.com/HFO4/gbc-in-cloud/util"
 	"log"
 	"os"
 )
@@ -258,6 +259,112 @@ func (mbc *MBC1) DoChangeROMRAMMode(val byte) {
 
 /*
 		MBC1
+	====================================
+*/
+
+/*
+	====================================
+		MBC2
+*/
+type MBC2 struct {
+	rom            []byte
+	CurrentROMBank byte
+	RAMBank        []byte
+	CurrentRAMBank byte
+	EnableRAM      bool
+	ROMBankingMode bool
+}
+
+func (mbc *MBC2) ReadRomBank(address uint16) byte {
+	newAddress := uint32(address - 0x4000)
+	return mbc.rom[newAddress+uint32(mbc.CurrentROMBank)*0x4000]
+}
+
+func (mbc *MBC2) ReadRamBank(address uint16) byte {
+	newAddress := uint32(address - 0xA000)
+	return mbc.RAMBank[newAddress+(uint32(mbc.CurrentRAMBank)*0x2000)]
+}
+
+func (mbc *MBC2) WriteRamBank(address uint16, data byte) {
+	if mbc.EnableRAM {
+		newAddress := uint32(address - 0xA000)
+		mbc.RAMBank[newAddress+(uint32(mbc.CurrentRAMBank)*0x2000)] = data
+	}
+}
+
+func (mbc *MBC2) ReadRom(address uint16) byte {
+	return mbc.rom[address]
+}
+func (mbc *MBC2) HandleBanking(address uint16, val byte) {
+	// do RAM enabling
+	if address < 0x2000 {
+		mbc.DoRamBankEnable(address, val)
+	} else if (address >= 0x2000) && (address < 0x4000) {
+		mbc.DoChangeLoROMBank(val)
+
+	} else if (address >= 0x4000) && (address < 0x6000) {
+		if mbc.ROMBankingMode {
+			mbc.DoChangeHiRomBank(val)
+		} else {
+			mbc.DoRAMBankChange(val)
+		}
+
+	} else if (address >= 0x6000) && (address < 0x8000) {
+		mbc.DoChangeROMRAMMode(val)
+	}
+}
+
+func (mbc *MBC2) DoRamBankEnable(address uint16, val byte) {
+
+	if util.TestBit(byte(address&0xFF), 4) == true {
+		return
+	}
+
+	testData := val & 0xF
+	if testData == 0xA {
+		mbc.EnableRAM = true
+	} else if testData == 0x0 {
+		mbc.EnableRAM = false
+	}
+}
+
+func (mbc *MBC2) DoChangeLoROMBank(val byte) {
+	mbc.CurrentROMBank = val & 0xF
+	if mbc.CurrentROMBank == 0 {
+		mbc.CurrentROMBank++
+	}
+}
+
+func (mbc *MBC2) DoChangeHiRomBank(val byte) {
+	// turn off the upper 3 bits of the current rom
+	mbc.CurrentROMBank &= 31
+
+	// turn off the lower 5 bits of the data
+	val &= 224
+	mbc.CurrentROMBank |= val
+	if mbc.CurrentROMBank == 0 {
+		mbc.CurrentROMBank++
+	}
+}
+
+func (mbc *MBC2) DoRAMBankChange(val byte) {
+	mbc.CurrentRAMBank = val & 0x3
+}
+
+func (mbc *MBC2) DoChangeROMRAMMode(val byte) {
+	newData := val & 0x1
+	if newData == 0 {
+		mbc.ROMBankingMode = true
+	} else {
+		mbc.ROMBankingMode = false
+	}
+	if mbc.ROMBankingMode {
+		mbc.CurrentRAMBank = 0
+	}
+}
+
+/*
+		MBC2
 	====================================
 */
 
