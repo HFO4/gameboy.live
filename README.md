@@ -13,7 +13,7 @@ telnet gameboy.live 1989
 
 ## Installation
 
-You can directly download executable file from [Release](https://github.com/HFO4/gameboy.live/releases) page, or build from the source:
+You can directly download executable file from [Release](https://github.com/HFO4/gameboy.live/releases) page, or build from the source. Go 1.11 or higher is required. Run `go version` to check what version is currently installed. On Debian based systems the packages `libasound2-dev` and `libgl1-mesa-dev` will need to be installed.
 
 ```
 git clone https://github.com/HFO4/gameboy.live.git
