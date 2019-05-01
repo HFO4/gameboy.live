@@ -90,6 +90,23 @@ telnet <ip of your server>:<port>
 
 To be careful of, this "cloud gaming" is only playable in terminals support [ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code) standard and UTF-8 charset. You can use `WSL` instead of `CMD` on Windows.
 
+### Debug
+
+`Gameboy.Live` has a simple build-in debugger which can be used to debug games or emulatoe itself. To turn on debug mode, set the `d` flag to `true`:
+
+```
+gbdotlive -r "test.gb" -d=true
+```
+
+The emulator will firstly break at `0x0100` in debug mode, which is the entry point of the game program. You can type the adress of next breakpoint, emulator will continue to run to the next breakpoint. At each breakpoint, emulator will print registers' status like above, and dump the main memory into `memory.dump` (ROM and RAM bank is not included)
+
+```
+[OP:NOP]
+AF:01B0  BC:0013  DE:00D8  HL:014D  SP:FFFE   
+PC:0100  LCDC:91  IF:E1    IE:00    IME:false 
+LCD:100 
+```
+
 ## Keyboard instruction
 
 | Keyboard | Gameboy |
