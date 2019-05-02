@@ -139,6 +139,7 @@ There are still many places to be perfected：
 - [ ] Failed to pass Blargg's instruction timing test
 - [ ] Game saving & restore in cartridge level
 - [ ] Game saving & restore in emulator level
+- [ ] Multiplayer support in cloud gaming mode
 
 ## Testing
 
