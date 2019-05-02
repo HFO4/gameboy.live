@@ -1,9 +1,9 @@
 # Gameboy.Live
-🕹️ `Gameboy.Live` is a Gameboy emulator written in go for learning purpose. You can simply play Gameboy games on your desktop:
+🕹️ `Gameboy.Live` is a Gameboy emulator written in go for learning purposes. You can simply play Gameboy games on your desktop:
 
 ![https://github.com/HFO4/gameboy.live/raw/master/doc/screenshot.png](https://github.com/HFO4/gameboy.live/raw/master/doc/screenshot.png)
 
-Or, play "Cloud gaming" in your terminal with one single command:
+Or, "Cloud Game" in your terminal with a single command:
 
 ```
 telnet gameboy.live 1989
@@ -13,7 +13,7 @@ telnet gameboy.live 1989
 
 ## Installation
 
-You can directly download executable file from [Release](https://github.com/HFO4/gameboy.live/releases) page, or build from the source. Go 1.11 or higher is required. Run `go version` to check what version is currently installed. On Debian based systems the packages `libasound2-dev` and `libgl1-mesa-dev` will need to be installed.
+You can directly download the executable file from the [Release](https://github.com/HFO4/gameboy.live/releases) page, or build it from the source. Go Version 1.11 or higher is required. Run `go version` to check what the version currently installed is. On Debian based systems, the packages `libasound2-dev` and `libgl1-mesa-dev` must be installed.
 
 ```
 git clone https://github.com/HFO4/gameboy.live.git
@@ -42,17 +42,17 @@ Usage of gbdotlive:
 
 ### GUI mode
 
-Play specified ROM file in GUI mode:
+Play a specified ROM file in GUI mode:
 
 ```
 gbdotlive -r "Tetris.gb" 
 ```
 
-### Set up a cloud gaming server
+### Set up a Cloud Gaming server
 
-You can use `Gameboy.Live` as a "cloud gaming" server, where players use telnet to play Gameboy games in terminal without additional software installation required. (Except telnet itself XD)
+You can use `Gameboy.Live` as a "Cloud Gaming" server, where players use telnet to play Gameboy games in terminal without additional software installation required. (Except telnet itself xD)
 
-First of all, a `gamelist.json` config file is required to specify game options, this is a typical example:
+A `gamelist.json` config file is required to specify game options. This is a typical example:
 
 ```json
 [{
@@ -68,9 +68,9 @@ First of all, a `gamelist.json` config file is required to specify game options,
 
 ```
 
-It is recommended to test every ROMs before put them in the config file.
+It is recommended to test every ROM before putting them in the config file.
 
-Next, start `Gameboy.Live` server with config file from the previous step:
+Next, start a `Gameboy.Live` server with the config file from the previous step:
 
 ```
 gbdotlive -s -c "gamelist.json"
@@ -82,23 +82,23 @@ You will see an output like this, which means your server has started successful
 2019/04/30 21:27:56 Listen port: 1989 
 ```
 
-Now, you can play games anywhere you want. The simulation and rendering process is done entirely on the server.
+Now, you can play games anywhere you want! The simulation and rendering process is done entirely on the server.
 
 ```
 telnet <ip of your server>:<port>
 ```
 
-To be careful of, this "cloud gaming" is only playable in terminals support [ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code) standard and UTF-8 charset. You can use `WSL` instead of `CMD` on Windows.
+"Cloud Gaming" is only supported in terminals which support standard [ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code) and the UTF-8 charset. You can use `WSL` instead of `CMD` on Windows.
 
 ### Debug
 
-`Gameboy.Live` has a simple build-in debugger which can be used to debug games or emulatoe itself. To turn on debug mode, set the `d` flag to `true`:
+`Gameboy.Live` has a simple built-in debugger. To turn on debug mode, set the `d` flag to `true`:
 
 ```
 gbdotlive -r "test.gb" -d=true
 ```
 
-The emulator will firstly break at `0x0100` in debug mode, which is the entry point of the game program. You can type the adress of next breakpoint, emulator will continue to run to the next breakpoint. At each breakpoint, emulator will print registers' status like above, and dump the main memory into `memory.dump` (ROM and RAM bank is not included)
+The emulator will firstly break at the ROM entry point `0x0100` in debug mode, which is the entry point of the game program. You can type the adress of next breakpoint. The emulator will continue to run until the next breakpoint is reached. At each breakpoint, the emulator will print the register's contents like above and dump the main memory into `memory.dump` (ROM and RAM bank not included)
 
 ```
 [OP:NOP]
@@ -124,16 +124,16 @@ LCD:100
 
 - [x] CPU instruction emulation
 - [x] Timer and interrupt
-- [x] Support for ROM-only、MBC1、MBC2、MBC3 cartridge
+- [x] Support for ROM-only, MBC1, MBC2, MBC3 cartridge
 - [x] Sound emulation
 - [x] Graphics emulation
 - [x] Cloud gaming
 - [x] ROM debugger
 
-There are still many places to be perfected：
+There are still many TODOs：
 
 - [ ] Support Gameboy Color emulation
-- [ ] Support for MBC4、MBC5、HuC1 cartridge
+- [ ] Support for MBC4, MBC5, HuC1 cartridge
 - [ ] Sound simulation is incomplete, still got differences compared to the Gameboy real machine
 - [ ] Sprite priority issue (see `Wario Land II` and `Metroid II: Return of Samus`)
 - [ ] Failed to pass Blargg's instruction timing test
@@ -147,7 +147,7 @@ There are still many places to be perfected：
 
 ## Contribution
 
-This emulator is just for learning and entertainment purpose. There are still many places to be perfected. Any suggestions or contribution is welcomed!
+This emulator is just for learning and entertainment purposes. There are still many places to be perfected. Any suggestions or contributions is welcomed!
 
 ## Reference
 
