@@ -15,3 +15,6 @@
 *.gbc
 *.dump
 *.sav
+main
+*.sum
+gamelist.json
