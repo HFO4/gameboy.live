@@ -76,7 +76,7 @@ Next, start a `Gameboy.Live` server with the config file from the previous step:
 gbdotlive -s -c "gamelist.json"
 ```
 
-You will see an output like this, which means your server has started successfuly:
+You will see an output like this, which means your server has started successfully:
 
 ```
 2019/04/30 21:27:56 Listen port: 1989 
@@ -98,7 +98,7 @@ telnet <ip of your server>:<port>
 gbdotlive -r "test.gb" -d=true
 ```
 
-The emulator will firstly break at the ROM entry point `0x0100` in debug mode, which is the entry point of the game program. You can type the adress of next breakpoint. The emulator will continue to run until the next breakpoint is reached. At each breakpoint, the emulator will print the register's contents like above and dump the main memory into `memory.dump` (ROM and RAM bank not included)
+The emulator will firstly break at the ROM entry point `0x0100` in debug mode, which is the entry point of the game program. You can type the address of next breakpoint. The emulator will continue to run until the next breakpoint is reached. At each breakpoint, the emulator will print the register's contents like above and dump the main memory into `memory.dump` (ROM and RAM bank not included)
 
 ```
 [OP:NOP]
