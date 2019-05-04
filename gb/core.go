@@ -16,6 +16,15 @@ type Core struct {
 
 	/*
 	   +++++++++++++++++++++++
+	   +     Serial Port     +
+	   +++++++++++++++++++++++
+	*/
+	Serial         driver.ChannelIO
+	SerialByte     byte
+	InterruptCount int
+
+	/*
+	   +++++++++++++++++++++++
 	   +        Joypad       +
 	   +++++++++++++++++++++++
 	*/
@@ -86,6 +95,8 @@ func (core *Core) Init(romPath string) {
 	core.Timer.TimerCounter = 0
 	core.Timer.DividerRegister = 0
 	core.JoypadStatus = 0xFF
+	core.SerialByte = 0xFF
+	core.Serial.Receive = make(chan byte)
 
 	core.initRom(romPath)
 	core.initMemory()
@@ -150,8 +161,22 @@ func (core *Core) Update() {
 		core.UpdateTimers(cycles)
 		core.UpdateGraphics(cycles)
 		cyclesThisUpdate += core.Interrupt()
+		core.UpdateIO(cycles)
+
 	}
 	core.RenderScreen()
+}
+
+func (core *Core) UpdateIO(cycles int) {
+	data, reqInt := core.Serial.FetchByte(cycles)
+	if reqInt {
+		ret := core.Memory.MainMemory[0xFF02]
+		ret = util.ClearBit(ret, 7)
+		core.Memory.MainMemory[0xFF02] = ret
+		//core.Serial.SetChannelStatus(util.TestBit(ret,0),util.TestBit(ret,7))
+		core.SerialByte = data
+		core.RequestInterrupt(3)
+	}
 }
 
 /*
@@ -242,6 +267,7 @@ func (core *Core) DoInterrupt(id int) {
 			LCD: 0x48
 			TIMER: 0x50
 			JOYPAD: 0x60
+			Serial: 0x58
 	*/
 	switch id {
 	case 0:

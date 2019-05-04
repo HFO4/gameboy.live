@@ -1,6 +1,7 @@
 package gb
 
 import (
+	"github.com/HFO4/gbc-in-cloud/util"
 	"io/ioutil"
 	"log"
 )
@@ -90,6 +91,8 @@ func (core *Core) ReadMemory(address uint16) byte {
 		// 	 Bit 1 - P11 Input Left  or Button B (0=Pressed) (Read Only)
 		// 	 Bit 0 - P10 Input Right or Button A (0=Pressed) (Read Only)
 		return core.GetJoypadStatus()
+	} else if address == 0xFF01 {
+		return core.SerialByte
 	}
 	return core.Memory.MainMemory[address]
 }
@@ -143,6 +146,26 @@ func (core *Core) WriteMemory(address uint16, data byte) {
 			core.Sound.Trigger(address, data, core.Memory.MainMemory[0xFF10:0xFF40])
 		}
 
+	} else if address == 0xFF02 {
+		/*
+			FF02 - SC - Serial Transfer Control (R/W)
+			  Bit 7 - Transfer Start Flag (0=No Transfer, 1=Start)
+			  Bit 1 - Clock Speed (0=Normal, 1=Fast) ** CGB Mode Only **
+			  Bit 0 - Shift Clock (0=External Clock, 1=Internal Clock)
+		*/
+
+		core.Serial.SetChannelStatus(util.TestBit(data, 0), util.TestBit(data, 7))
+
+		// If transfer is requested
+		if util.TestBit(data, 7) {
+			// If this console is the Master console
+			if util.TestBit(data, 0) {
+			}
+			//log.Printf("send:%X\n",core.Memory.MainMemory[0xFF01])
+			core.Serial.SendByte(core.Memory.MainMemory[0xFF01])
+
+		}
+		core.Memory.MainMemory[address] = data
 	} else {
 		core.Memory.MainMemory[address] = data
 	}

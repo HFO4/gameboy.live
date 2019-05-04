@@ -14,9 +14,12 @@ import (
 type Player struct {
 	Conn     net.Conn
 	Emulator *gb.Core
-	ID       int
+	ID       string
 	Selected int
 	GameList *[]GameInfo
+
+	SelectedPlayer   int
+	SelectedPlayerID string
 }
 
 // Send TELNET options
@@ -34,36 +37,38 @@ func (player *Player) InitTelnet() bool {
 
 func (player *Player) Init() bool {
 
-	Driver := &driver.ASCII{
-		Conn: player.Conn,
+	if player.Emulator == nil {
+		Driver := &driver.ASCII{
+			Conn: player.Conn,
+		}
+
+		core := &gb.Core{
+			// Terminal gaming dose not require high FPS,
+			// 10 FPS is a decent choice in most situation.
+			FPS:           10,
+			Clock:         4194304,
+			Debug:         false,
+			DisplayDriver: Driver,
+			Controller:    new(driver.TelnetController),
+			DrawSignal:    make(chan bool),
+			SpeedMultiple: 0,
+			ToggleSound:   false,
+		}
+
+		player.Emulator = core
+
+		log.Println("New Player:", player.ID)
+
 	}
-
-	// Set the controller driver to TELNET controller
-	controller := &driver.TelnetController{}
-	core := &gb.Core{
-		// Terminal gaming dose not require high FPS,
-		// 10 FPS is a decent choice in most situation.
-		FPS:           10,
-		Clock:         4194304,
-		Debug:         false,
-		DisplayDriver: Driver,
-		Controller:    controller,
-		DrawSignal:    make(chan bool),
-		SpeedMultiple: 0,
-		ToggleSound:   false,
-	}
-
-	player.Emulator = core
-
-	log.Println("New Player:", player.ID)
 	return true
+
 }
 
 // Generate welcome and game selection screen
-func (player *Player) RenderWelcomScreen() []byte {
+func (player *Player) RenderWelcomeScreen() []byte {
 	res := "\033[H"
 	res += "Welcome to " + fmt.Stringer(aurora.Bold(aurora.Green("Gameboy.Live"))).String() + ", you can enjoy GAMEBOY games in your terminal with \"cloud gaming\" experience.\r\n"
-	res += "Use " + fmt.Stringer(aurora.Gray(1-1, "Direction keys").BgGray(24-1)).String() + " in your keyboard to select a game, " + fmt.Stringer(aurora.Gray(1-1, "Enter").BgGray(24-1)).String() + " key to confirm.\r\n"
+	res += "Use " + fmt.Stringer(aurora.Gray(1-1, "Direction keys").BgGray(24-1)).String() + " in your keyboard to select a game, " + fmt.Stringer(aurora.Gray(1-1, " Enter ").BgGray(24-1)).String() + " key to confirm, " + fmt.Stringer(aurora.Gray(1-1, " M ").BgGray(24-1)).String() + " key to enter multi-player mode and select a partner.\r\n"
 	res += "\r\n\r\n"
 
 	for k, v := range *player.GameList {
@@ -92,9 +97,11 @@ func (player *Player) Welcome() int {
 		return -1
 	}
 
+	player.Init()
+
 	for {
 		var n int
-		_, err = player.Conn.Write(player.RenderWelcomScreen())
+		_, err = player.Conn.Write(player.RenderWelcomeScreen())
 		buf := make([]byte, 512)
 		n, err = player.Conn.Read(buf)
 		inputKey := buf[:n]
@@ -120,10 +127,99 @@ func (player *Player) Welcome() int {
 		// Enter key pressed
 		case 10, 0:
 			return player.Selected
+		case 109:
+			player.SelectPlayer()
+			_, err = player.Conn.Write([]byte("\033[2J\033[H"))
+
+			// If choose each other, connect their serial driver
+			if player.SelectedPlayerID != "" && PlayerList[player.SelectedPlayer].SelectedPlayerID == player.ID {
+				PlayerList[player.SelectedPlayer].Emulator.Serial.SetTarget(&player.Emulator.Serial)
+				player.Emulator.Serial.SetTarget(&PlayerList[player.SelectedPlayer].Emulator.Serial)
+				log.Printf("[Serial] Player %s connect with Player %s", player.SelectedPlayerID, PlayerList[player.SelectedPlayer].SelectedPlayerID)
+			}
 		}
 
 	}
 
+}
+
+/*
+	Render select multiplayer screen
+*/
+func (player *Player) RenderSelectPlayer() []byte {
+	res := "\033[2J\033[H"
+	res += "You can play multiplayer game with your friend or strangers. The list below lists players who are currently online. Both of you need to choose each other, so that the connection can be established.\r\n"
+	res += "Your player ID: " + fmt.Stringer(aurora.Gray(1-1, player.ID).BgGray(24-1)).String() + "\r\n"
+	res += "Player list (Press R to refresh):\r\n\r\n"
+
+	for k, v := range PlayerList {
+
+		if player.SelectedPlayer == k {
+			res += "    " + fmt.Stringer(aurora.Gray(1-1, v.ID+"\r\n").BgGray(24-1)).String()
+		} else {
+			res += "    " + v.ID + "\r\n"
+		}
+
+	}
+	return []byte(res)
+}
+
+/*
+	Select multiplayer
+*/
+func (player *Player) SelectPlayer() int {
+
+	for {
+		var n int
+		_, err := player.Conn.Write(player.RenderSelectPlayer())
+		if err != nil {
+			return -1
+		}
+		buf := make([]byte, 512)
+		n, err = player.Conn.Read(buf)
+		inputKey := buf[:n]
+		if err != nil {
+			return -1
+		}
+
+		switch inputKey[len(inputKey)-1] {
+		// Up key pressed
+		case 65:
+			if player.SelectedPlayer == 0 {
+				player.SelectedPlayer = len(PlayerList) - 1
+			} else {
+				player.SelectedPlayer--
+			}
+		// Down key pressed
+		case 66:
+			if player.SelectedPlayer == len(PlayerList)-1 {
+				player.SelectedPlayer = 0
+			} else {
+				player.SelectedPlayer++
+			}
+		// Enter key pressed
+		case 10, 0:
+			// Cannot choose yourself
+			if PlayerList[player.SelectedPlayer].ID == player.ID {
+				continue
+			}
+
+			// Choose none
+			if player.SelectedPlayer == 0 {
+				player.SelectedPlayerID = ""
+				return 0
+			}
+
+			player.SelectedPlayerID = PlayerList[player.SelectedPlayer].ID
+			return 0
+		// R key pressed
+		case 114:
+			continue
+		}
+
+		log.Println(inputKey)
+	}
+	return 0
 }
 
 /*
@@ -154,21 +250,40 @@ func (player *Player) Instruction() int {
 	}
 }
 
+func (player *Player) Logout() {
+	// Disconnect serial port
+	if player.Emulator.Serial.Target != nil {
+		player.Emulator.Serial.Target.Target = nil
+	}
+
+	playerIndex := 0
+	for k, v := range PlayerList {
+		if v.ID == player.ID {
+			playerIndex = k
+			break
+		}
+	}
+
+	if playerIndex != 0 {
+		PlayerList = append(PlayerList[:playerIndex], PlayerList[playerIndex+1:]...)
+	}
+}
+
 func (player *Player) Serve() {
 
 	game := player.Welcome()
 
 	if game < 0 {
 		log.Println("User quit")
+		player.Logout()
 		return
 	}
 
 	if player.Instruction() < 0 {
 		log.Println("User quit")
+		player.Logout()
 		return
 	}
-
-	player.Init()
 
 	// Set the display driver to TELNET
 	go player.Emulator.DisplayDriver.Run(player.Emulator.DrawSignal)
@@ -181,6 +296,7 @@ func (player *Player) Serve() {
 		if err != nil {
 			log.Println("Error reading", err.Error())
 			player.Emulator.Exit = true
+			player.Logout()
 			return
 		}
 		// If "Q" was pressed ,close the connection
@@ -191,6 +307,7 @@ func (player *Player) Serve() {
 			if err != nil {
 				log.Println("Failed to close connection")
 			}
+			player.Logout()
 			return
 		}
 		// Handle user input
