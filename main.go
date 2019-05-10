@@ -7,7 +7,6 @@ import (
 	"github.com/HFO4/gbc-in-cloud/driver"
 	"github.com/HFO4/gbc-in-cloud/gb"
 	"github.com/HFO4/gbc-in-cloud/server"
-	"github.com/faiface/pixel/pixelgl"
 	"log"
 	"os"
 )
@@ -50,8 +49,9 @@ func startGUI() {
 	core.SpeedMultiple = 0
 	core.ToggleSound = SoundOn
 	core.Init(ROMPath)
-	go core.DisplayDriver.Run(core.DrawSignal)
-	core.Run()
+
+	go core.Run()
+	core.DisplayDriver.Run(core.DrawSignal)
 }
 
 func runServer() {
@@ -85,7 +85,7 @@ func runServer() {
 	streamServer.Run()
 }
 
-func run() {
+func main() {
 	flag.Parse()
 	if h {
 		flag.Usage()
@@ -101,8 +101,4 @@ func run() {
 		startGUI()
 		return
 	}
-}
-
-func main() {
-	pixelgl.Run(run)
 }
