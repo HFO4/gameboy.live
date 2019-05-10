@@ -1,4 +1,4 @@
-module github.com/andydotxyz/gameboy.cloud
+module github.com/andydotxyz/gameboy.live
 
 go 1.12
 
