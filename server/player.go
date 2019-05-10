@@ -2,8 +2,8 @@ package server
 
 import (
 	"fmt"
-	"github.com/HFO4/gbc-in-cloud/driver"
-	"github.com/HFO4/gbc-in-cloud/gb"
+	"github.com/andydotxyz/gameboy.live/driver"
+	"github.com/andydotxyz/gameboy.live/gb"
 	"github.com/logrusorgru/aurora"
 	"log"
 	"net"

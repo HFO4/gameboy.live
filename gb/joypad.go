@@ -1,6 +1,6 @@
 package gb
 
-import "github.com/HFO4/gbc-in-cloud/util"
+import "github.com/andydotxyz/gameboy.live/util"
 
 func (core *Core) GetJoypadStatus() byte {
 	res := core.Memory.MainMemory[0xFF00]

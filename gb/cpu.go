@@ -2,7 +2,7 @@ package gb
 
 import (
 	"fmt"
-	"github.com/HFO4/gbc-in-cloud/util"
+	"github.com/andydotxyz/gameboy.live/util"
 	"log"
 )
 

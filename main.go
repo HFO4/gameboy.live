@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"encoding/json"
 	"flag"
-	"github.com/HFO4/gbc-in-cloud/driver"
-	"github.com/HFO4/gbc-in-cloud/gb"
-	"github.com/HFO4/gbc-in-cloud/server"
+	"github.com/andydotxyz/gameboy.live/driver"
+	"github.com/andydotxyz/gameboy.live/gb"
+	"github.com/andydotxyz/gameboy.live/server"
 	"log"
 	"os"
 )

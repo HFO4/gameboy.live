@@ -2,7 +2,7 @@ package gb
 
 import (
 	"bufio"
-	"github.com/HFO4/gbc-in-cloud/util"
+	"github.com/andydotxyz/gameboy.live/util"
 	"log"
 	"os"
 )

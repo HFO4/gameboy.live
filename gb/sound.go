@@ -1,7 +1,7 @@
 package gb
 
 import (
-	"github.com/HFO4/gbc-in-cloud/util"
+	"github.com/andydotxyz/gameboy.live/util"
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/effects"
 	"github.com/faiface/beep/speaker"
