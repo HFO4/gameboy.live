@@ -75,6 +75,12 @@ func (lcd *LCD) NewInput(b []byte) {
 }
 
 func (lcd *LCD) Run(drawSignal chan bool) {
+	pixelgl.Run(func() {
+		lcd.run(drawSignal)
+	})
+}
+
+func (lcd *LCD) run(drawSignal chan bool) {
 	cfg := pixelgl.WindowConfig{
 		Title:  lcd.title,
 		Bounds: pixel.R(0, 0, 160*3, 142*3),
