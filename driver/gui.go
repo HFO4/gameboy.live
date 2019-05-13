@@ -36,9 +36,9 @@ func (lcd *LCD) UpdateInput() bool {
 	// Reference :https://github.com/Humpheh/goboy/blob/master/pkg/gbio/iopixel/pixels.go
 	var keyMap = map[pixelgl.Button]byte{
 		// A button
-		pixelgl.KeyZ: 4,
+		pixelgl.KeyZ: 5,
 		// B button
-		pixelgl.KeyX: 5,
+		pixelgl.KeyX: 4,
 		// SELECT button
 		pixelgl.KeyBackspace: 6,
 		// START button
