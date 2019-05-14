@@ -118,7 +118,7 @@ func (sound *Sound) Init() {
 	sound.Channel4.parent = sound
 	sound.Channel4.wave = 2
 
-	go sound.Play()
+	sound.Play()
 }
 
 func (sound *Sound) Play() {
