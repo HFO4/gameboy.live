@@ -83,7 +83,7 @@ func (lcd *LCD) Run(drawSignal chan bool) {
 func (lcd *LCD) run(drawSignal chan bool) {
 	cfg := pixelgl.WindowConfig{
 		Title:  lcd.title,
-		Bounds: pixel.R(0, 0, 160*3, 142*3),
+		Bounds: pixel.R(0, 0, 160*3, 144*3),
 		VSync:  false,
 	}
 	win, err := pixelgl.NewWindow(cfg)
