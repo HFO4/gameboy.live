@@ -117,8 +117,8 @@ LCD:100
 |  <kbd>↓</kbd> | Down    |
 |   <kbd>←</kbd> | Left    |
 |   <kbd>→</kbd>  | Right   |
-|    <kbd>X</kbd>  | B       |
-|     <kbd>Z</kbd>     | A       |
+|    <kbd>X</kbd>  | A      |
+|     <kbd>Z</kbd>     | B      |
 
 ## Features & TODOs
 

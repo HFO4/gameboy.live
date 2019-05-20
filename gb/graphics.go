@@ -135,9 +135,9 @@ func (core *Core) RenderSprites() {
 				}
 
 				if core.ScanLineBG[pixel] || priority {
-					core.Screen[pixel][scanline-1][0] = red
-					core.Screen[pixel][scanline-1][1] = green
-					core.Screen[pixel][scanline-1][2] = blue
+					core.Screen[pixel][scanline][0] = red
+					core.Screen[pixel][scanline][1] = green
+					core.Screen[pixel][scanline][2] = blue
 				}
 
 			}
@@ -333,9 +333,9 @@ func (core *Core) RenderTiles() {
 			core.ScanLineBG[pixel] = false
 		}
 
-		core.Screen[pixel][finally-1][0] = red
-		core.Screen[pixel][finally-1][1] = green
-		core.Screen[pixel][finally-1][2] = blue
+		core.Screen[pixel][finally][0] = red
+		core.Screen[pixel][finally][1] = green
+		core.Screen[pixel][finally][2] = blue
 	}
 
 }

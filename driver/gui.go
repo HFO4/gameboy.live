@@ -36,9 +36,9 @@ func (lcd *LCD) UpdateInput() bool {
 	// Reference :https://github.com/Humpheh/goboy/blob/master/pkg/gbio/iopixel/pixels.go
 	var keyMap = map[pixelgl.Button]byte{
 		// A button
-		pixelgl.KeyZ: 4,
+		pixelgl.KeyZ: 5,
 		// B button
-		pixelgl.KeyX: 5,
+		pixelgl.KeyX: 4,
 		// SELECT button
 		pixelgl.KeyBackspace: 6,
 		// START button
@@ -75,9 +75,15 @@ func (lcd *LCD) NewInput(b []byte) {
 }
 
 func (lcd *LCD) Run(drawSignal chan bool) {
+	pixelgl.Run(func() {
+		lcd.run(drawSignal)
+	})
+}
+
+func (lcd *LCD) run(drawSignal chan bool) {
 	cfg := pixelgl.WindowConfig{
 		Title:  lcd.title,
-		Bounds: pixel.R(0, 0, 160*3, 142*3),
+		Bounds: pixel.R(0, 0, 160*3, 144*3),
 		VSync:  false,
 	}
 	win, err := pixelgl.NewWindow(cfg)

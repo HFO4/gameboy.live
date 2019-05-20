@@ -67,8 +67,8 @@ func (tel *TelnetController) NewInput(data []byte) {
 		67:  0,
 		10:  7,
 		8:   6,
-		122: 4,
-		120: 5,
+		122: 5,
+		120: 4,
 		0:   7,
 	}
 
