@@ -41,7 +41,7 @@ func (server *StreamServer) Run() {
 		}
 
 		// Generate unique ID for each player
-		PlayerID, _ := uuid.NewV4()
+		PlayerID := uuid.NewV4()
 		player := &Player{
 			Conn:     conn,
 			ID:       PlayerID.String(),
