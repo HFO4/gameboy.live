@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"github.com/HFO4/gbc-in-cloud/driver"
+	"github.com/HFO4/gbc-in-cloud/fyne"
 	"github.com/HFO4/gbc-in-cloud/gb"
 	"github.com/HFO4/gbc-in-cloud/server"
 	"github.com/faiface/pixel/pixelgl"
@@ -16,6 +17,7 @@ var (
 	h bool
 
 	GUIMode    bool
+	FyneMode   bool
 	ServerMode bool
 
 	ConfigPath string
@@ -29,6 +31,7 @@ var (
 func init() {
 	flag.BoolVar(&h, "h", false, "This help")
 	flag.BoolVar(&GUIMode, "g", true, "Play specific game in GUI mode")
+	flag.BoolVar(&FyneMode, "G", false, "Play specific game in Fyne GUI mode")
 	flag.BoolVar(&ServerMode, "s", false, "Start a cloud-gaming server")
 	flag.BoolVar(&SoundOn, "m", true, "Turn on sound in GUI mode")
 	flag.BoolVar(&Debug, "d", false, "Use Debugger in GUI mode")
@@ -38,20 +41,20 @@ func init() {
 	flag.StringVar(&ROMPath, "r", "", "Set `ROM` file path to be played in GUI mode")
 }
 
-func startGUI() {
-	Driver := new(driver.LCD)
+func startGUI(screen driver.DisplayDriver, control driver.ControllerDriver) {
 	core := new(gb.Core)
 	core.FPS = FPS
 	core.Clock = 4194304
 	core.Debug = Debug
-	core.DisplayDriver = Driver
-	core.Controller = Driver
+	core.DisplayDriver = screen
+	core.Controller = control
 	core.DrawSignal = make(chan bool)
 	core.SpeedMultiple = 0
 	core.ToggleSound = SoundOn
 	core.Init(ROMPath)
-	go core.DisplayDriver.Run(core.DrawSignal)
-	core.Run()
+
+	go core.Run()
+	screen.Run(core.DrawSignal)
 }
 
 func runServer() {
@@ -97,8 +100,13 @@ func run() {
 		return
 	}
 
-	if GUIMode {
-		startGUI()
+	if FyneMode {
+		driver := new(fyne.LCD)
+		startGUI(driver, driver)
+		return
+	} else if GUIMode {
+		driver := new(driver.LCD)
+		startGUI(driver, driver)
 		return
 	}
 }

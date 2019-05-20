@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns="http://www.w3.org/2000/svg"
+   width="130mm"
+   height="100mm"
+   viewBox="0 0 130 100"
+   version="1.1"
+   id="svg8">
+  <defs
+     id="defs2" />
+  <g
+     id="layer1"
+     transform="translate(0,-197)">
+    <rect
+       style="opacity:1;fill:#bdbdbd;fill-opacity:1;stroke:#bdbdbd;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       id="rect905"
+       width="20"
+       height="100"
+       x="0"
+       y="197" />
+    <rect
+       style="opacity:1;fill:#bdbdbd;fill-opacity:1;stroke:#bdbdbd;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       id="rect905-3"
+       width="20"
+       height="100"
+       x="110"
+       y="197" />
+    <rect
+       style="opacity:1;fill:#bdbdbd;fill-opacity:1;stroke:#bdbdbd;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       id="rect905-6"
+       width="90"
+       height="10"
+       x="20"
+       y="197" />
+    <rect
+       style="opacity:1;fill:#bdbdbd;fill-opacity:1;stroke:#bdbdbd;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       id="rect905-6-7"
+       width="90"
+       height="10"
+       x="20"
+       y="287" />
+    <path
+       style="opacity:1;fill:#646676;fill-opacity:1;stroke:#646676;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       d="m 26.457031,7.5585938 c -9.448819,0 -18.8984372,9.4496182 -18.8984372,18.8984372 V 351.49609 c -10e-8,9.44882 8.5047362,18.89844 18.8984372,18.89844 H 398.74023 c 56.69292,0 85.03907,-28.3481 85.03907,-85.04101 V 26.457031 c 0,-9.448819 -9.44767,-18.8984372 -18.89649,-18.8984372 z M 94.285156,51 H 396.64844 V 328 H 94.285156 Z"
+       transform="matrix(0.26458333,0,0,0.26458333,0,197)"
+       id="rect880" />
+    <circle
+       style="opacity:1;fill:#d91010;fill-opacity:1;stroke:#d91010;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       id="path947"
+       cx="11.25"
+       cy="235.5"
+       r="2" />
+  </g>
+</svg>
