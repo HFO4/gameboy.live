@@ -25,6 +25,7 @@ go build -o gbdotlive main.go
 
 ```
 Usage of gbdotlive:
+  -G    Play specific game in Fyne GUI mode
   -c config
         Set the game option list config file path
   -d    Use Debugger in GUI mode
@@ -45,7 +46,7 @@ Usage of gbdotlive:
 Play a specified ROM file in GUI mode:
 
 ```
-gbdotlive -r "Tetris.gb" 
+gbdotlive -G -r "Tetris.gb" 
 ```
 
 ### Set up a Cloud Gaming server
