@@ -4,6 +4,7 @@ import (
 	"github.com/andydotxyz/gameboy.live/util"
 	"io/ioutil"
 	"log"
+	"time"
 )
 
 /*
@@ -23,6 +24,7 @@ import (
 */
 type Memory struct {
 	MainMemory [0x10000]byte
+	dirty      bool
 }
 
 func (core *Core) initMemory() {
@@ -68,6 +70,20 @@ func (core *Core) initMemory() {
 	core.Memory.MainMemory[0xFF4B] = 0x00
 	core.Memory.MainMemory[0xFFFF] = 0x00
 
+	core.setupSaveLoop()
+}
+
+func (core *Core) setupSaveLoop() {
+	// each second check if there are new saves (to avoid thousands within a frame)
+	saveTimer := time.Tick(time.Second)
+	go func() {
+		for range saveTimer {
+			if core.Memory.dirty {
+				core.Memory.dirty = false
+				core.Cartridge.MBC.SaveRam(core.RamPath)
+			}
+		}
+	}()
 }
 
 func (core *Core) ReadMemory(address uint16) byte {
@@ -103,6 +119,7 @@ func (core *Core) WriteMemory(address uint16, data byte) {
 		//core.HandleBanking(address,data) ;
 	} else if (address >= 0xA000) && (address < 0xC000) {
 		core.Cartridge.MBC.WriteRamBank(address, data)
+		core.Memory.dirty = true
 	} else if (address >= 0xE000) && (address < 0xFE00) {
 		// writing to ECHO ram also writes in RAM
 		core.Memory.MainMemory[address] = data
