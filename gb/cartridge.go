@@ -596,14 +596,20 @@ func (mbc *MBC3) SaveRam(path string) {
 	Read cartridge data from file
 */
 func (core *Core) readRomFile(romPath string) []byte {
-	return readDataFile(romPath, "rom")
+	return readDataFile(romPath, false)
 }
 
-func readDataFile(path, name string) []byte {
+func readDataFile(path string, ram bool) []byte {
+	name := "rom"
+	if ram {
+		name = "ram"
+	}
 	log.Println("[Core] Loading", name, "file...")
 	romFile, err := os.Open(path)
 	if err != nil {
-		log.Fatal(err)
+		if !os.IsNotExist(err) || !ram {
+			log.Fatal(err)
+		}
 	}
 	defer romFile.Close()
 
@@ -622,7 +628,7 @@ func readDataFile(path, name string) []byte {
 }
 
 func (core *Core) readRamFile(ramPath string) []byte {
-	return readDataFile(ramPath, "sav")
+	return readDataFile(ramPath, true)
 }
 
 func writeRamFile(ramPath string, data []byte) {

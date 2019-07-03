@@ -384,7 +384,7 @@ func (core *Core) GetClockFreqCount() int {
 	Initialize Cartridge, load rom file and decode rom props
 */
 func (core *Core) initRom(romPath string) {
-	core.RamPath = romPath+".ram"
+	core.RamPath = romPath+".sav"
 	romData := core.readRomFile(romPath)
 	ramData := core.readRamFile(core.RamPath)
 	if ramData == nil {
