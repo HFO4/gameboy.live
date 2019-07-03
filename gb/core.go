@@ -81,6 +81,7 @@ type Core struct {
 	Timer     Timer
 	Exit      bool
 	GameTitle string
+	RamPath   string
 }
 
 type Timer struct {
@@ -383,7 +384,12 @@ func (core *Core) GetClockFreqCount() int {
 	Initialize Cartridge, load rom file and decode rom props
 */
 func (core *Core) initRom(romPath string) {
+	core.RamPath = romPath+".ram"
 	romData := core.readRomFile(romPath)
+	ramData := core.readRamFile(core.RamPath)
+	if ramData == nil {
+		ramData = make([]byte, 0x8000)
+	}
 
 	/*
 		0134-0143 - Title
@@ -440,7 +446,7 @@ func (core *Core) initRom(romPath string) {
 			rom:            romData,
 			CurrentROMBank: 1,
 			CurrentRAMBank: 0,
-			RAMBank:        make([]byte, 0x8000),
+			RAMBank:        ramData,
 		}
 		core.Cartridge.MBC = MBC
 		core.Cartridge.Props = &CartridgeProps{
@@ -452,7 +458,7 @@ func (core *Core) initRom(romPath string) {
 			rom:            romData,
 			CurrentROMBank: 1,
 			CurrentRAMBank: 0,
-			RAMBank:        make([]byte, 0x8000),
+			RAMBank:        ramData,
 		}
 		core.Cartridge.MBC = MBC
 		core.Cartridge.Props = &CartridgeProps{
@@ -464,6 +470,7 @@ func (core *Core) initRom(romPath string) {
 			rom:            romData,
 			CurrentROMBank: 1,
 			CurrentRAMBank: 0,
+			RAMBank:        ramData,
 		}
 		core.Cartridge.MBC = MBC
 		core.Cartridge.Props = &CartridgeProps{
@@ -479,7 +486,7 @@ func (core *Core) initRom(romPath string) {
 	}
 
 	/*
-		Get rom ban number according to ROM Size byte (0148)
+		Get rom bank number according to ROM Size byte (0148)
 		Specifies the ROM Size of the cartridge. Typically calculated as "32KB shl N".
 		  00h -  32KByte (no ROM banking) - here we set the bank number to 2
 		  01h -  64KByte (4 banks)
@@ -500,7 +507,7 @@ func (core *Core) initRom(romPath string) {
 	log.Printf("[Cartridge] ROM bank number: %d (%dKBytes)\n", core.Cartridge.Props.ROMBank, core.Cartridge.Props.ROMBank*16)
 
 	/*
-		Get rom ban number according to ROM Size byte (0149)
+		Get rom bank number according to ROM Size byte (0149)
 		Specifies the size of the external RAM in the cartridge (if any).
 		  00h - None		(0 banks of 8KBytes each)
 		  01h - 2 KBytes	(1 banks of 8KBytes each)
