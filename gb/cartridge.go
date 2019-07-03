@@ -607,9 +607,11 @@ func readDataFile(path string, ram bool) []byte {
 	log.Println("[Core] Loading", name, "file...")
 	romFile, err := os.Open(path)
 	if err != nil {
-		if !os.IsNotExist(err) || !ram {
-			log.Fatal(err)
+		if os.IsNotExist(err) && ram {
+			return nil
 		}
+
+		log.Fatal(err)
 	}
 	defer romFile.Close()
 
