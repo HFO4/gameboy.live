@@ -53,7 +53,7 @@ var cartridgeTypeMap = map[byte]string{
 	byte(0xFC): "POCKET CAMERA",
 	byte(0xFD): "BANDAI TAMA5",
 	byte(0xFE): "HuC3",
-	byte(0x1F): "HuC1+RAM+BATTERY",
+	byte(0xFF): "HuC1+RAM+BATTERY",
 }
 
 /*
@@ -107,6 +107,7 @@ type MBC interface {
 	ReadRamBank(uint16) byte
 	WriteRamBank(uint16, byte)
 	HandleBanking(uint16, byte)
+	SaveRam(string)
 }
 
 /*
@@ -156,6 +157,9 @@ func (mbc *MBCRom) ReadRom(address uint16) byte {
 }
 
 func (mbc *MBCRom) HandleBanking(address uint16, val byte) {
+}
+
+func (mbc *MBCRom) SaveRam(path string) {
 }
 
 /*	Single ROM without MBC  END
@@ -315,6 +319,10 @@ func (mbc *MBC1) DoChangeROMRAMMode(val byte) {
 	}
 }
 
+func (mbc *MBC1) SaveRam(path string) {
+	writeRamFile(path, mbc.RAMBank)
+}
+
 /*
 		MBC1  END
 	====================================
@@ -436,6 +444,10 @@ func (mbc *MBC2) DoChangeROMRAMMode(val byte) {
 	}
 }
 
+func (mbc *MBC2) SaveRam(path string) {
+	writeRamFile(path, mbc.RAMBank)
+}
+
 /*
 		MBC2  END
 	====================================
@@ -448,7 +460,7 @@ func (mbc *MBC2) DoChangeROMRAMMode(val byte) {
 type MBC3 struct {
 	rom            []byte
 	CurrentROMBank byte
-	RAMBank        [0x8000]byte
+	RAMBank        []byte
 	CurrentRAMBank byte
 	EnableRAM      bool
 
@@ -572,6 +584,10 @@ func (mbc *MBC3) DoChangeROMRAMMode(val byte) {
 	}
 }
 
+func (mbc *MBC3) SaveRam(path string) {
+	writeRamFile(path, mbc.RAMBank)
+}
+
 /*
 		MBC3  END
 	====================================
@@ -580,12 +596,25 @@ func (mbc *MBC3) DoChangeROMRAMMode(val byte) {
 	Read cartridge data from file
 */
 func (core *Core) readRomFile(romPath string) []byte {
-	log.Println("[Core] Loading rom file...")
-	romFile, err := os.Open(romPath)
-	defer romFile.Close()
+	return readDataFile(romPath, false)
+}
+
+func readDataFile(path string, ram bool) []byte {
+	name := "rom"
+	if ram {
+		name = "ram"
+	}
+	log.Println("[Core] Loading", name, "file...")
+	romFile, err := os.Open(path)
 	if err != nil {
+		if os.IsNotExist(err) && ram {
+			return nil
+		}
+
 		log.Fatal(err)
 	}
+	defer romFile.Close()
+
 	stats, statsErr := romFile.Stat()
 	if statsErr != nil {
 		log.Fatal(statsErr)
@@ -596,6 +625,25 @@ func (core *Core) readRomFile(romPath string) []byte {
 	bufReader := bufio.NewReader(romFile)
 	_, err = bufReader.Read(bytes)
 
-	log.Printf("[Core] %d Bytes rom loaded\n", size)
+	log.Println("[Core]", size, "Bytes", name, "loaded")
 	return bytes
+}
+
+func (core *Core) readRamFile(ramPath string) []byte {
+	return readDataFile(ramPath, true)
+}
+
+func writeRamFile(ramPath string, data []byte) {
+	ramFile, err := os.Create(ramPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer ramFile.Close()
+
+	bufWriter := bufio.NewWriter(ramFile)
+	size, err := bufWriter.Write(data)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("[Core] %d Bytes ram written\n", size)
 }
