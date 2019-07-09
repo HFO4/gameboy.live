@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"image"
 	"log"
-	"os"
-
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
 	"fyne.io/fyne/canvas"
@@ -139,7 +137,7 @@ func (lcd *LCD) Layout(_ []fyne.CanvasObject, size fyne.Size) {
 	lcd.output.Move(fyne.NewPos(int(100*xScale), int(54*yScale)))
 }
 
-func (lcd *LCD) Run(drawSignal chan bool) {
+func (lcd *LCD) Run(drawSignal chan bool, onQuit func()) {
 	a := app.New()
 	win := a.NewWindow(fmt.Sprintf("GameBoy - %s", lcd.title))
 
@@ -162,7 +160,8 @@ func (lcd *LCD) Run(drawSignal chan bool) {
 	win.Canvas().(desktop.Canvas).SetOnKeyDown(lcd.buttonDown)
 	win.Canvas().(desktop.Canvas).SetOnKeyUp(lcd.buttonUp)
 	win.SetOnClosed(func() {
-		os.Exit(0)
+		onQuit()
+		a.Quit()
 	})
 	win.ShowAndRun()
 }

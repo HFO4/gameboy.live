@@ -73,15 +73,19 @@ func (core *Core) initMemory() {
 	core.setupSaveLoop()
 }
 
+func (core *Core) SaveRAM() {
+	if core.Memory.dirty {
+		core.Memory.dirty = false
+		core.Cartridge.MBC.SaveRam(core.RamPath)
+	}
+}
+
 func (core *Core) setupSaveLoop() {
 	// each second check if there are new saves (to avoid thousands within a frame)
 	saveTimer := time.Tick(time.Second)
 	go func() {
 		for range saveTimer {
-			if core.Memory.dirty {
-				core.Memory.dirty = false
-				core.Cartridge.MBC.SaveRam(core.RamPath)
-			}
+			core.SaveRAM()
 		}
 	}()
 }
