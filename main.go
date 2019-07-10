@@ -53,9 +53,7 @@ func startGUI(screen driver.DisplayDriver, control driver.ControllerDriver) {
 	core.Init(ROMPath)
 
 	go core.Run()
-	screen.Run(core.DrawSignal, func() {
-		core.SaveRAM()
-	})
+	screen.Run(core.DrawSignal)
 }
 
 func runServer() {
