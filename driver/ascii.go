@@ -23,7 +23,7 @@ func (stream *ASCII) Init(pixels *[160][144][3]uint8, title string) {
 
 }
 
-func (stream *ASCII) Run(drawSignal chan bool) {
+func (stream *ASCII) Run(drawSignal chan bool, onQuit func()) {
 
 	for {
 		if !<-drawSignal {
