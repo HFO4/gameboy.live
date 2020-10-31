@@ -3,6 +3,7 @@ package driver
 import (
 	"image"
 	"image/color"
+	"image/draw"
 	"image/png"
 	"log"
 	"os"
@@ -50,9 +51,10 @@ func (s *StaticImage) Run(drawSignal chan bool, f func()) {
 
 // Render raw pixels into images
 func (s *StaticImage) Render() {
+	scaleRatio := 4
 	s.lock.RLock()
 
-	img := image.NewRGBA(image.Rect(0, 0, 160, 144))
+	img := image.NewRGBA(image.Rect(0, 0, 160*scaleRatio, 144*scaleRatio))
 
 	for y := 0; y < 144; y++ {
 		for x := 0; x < 160; x++ {
@@ -78,7 +80,9 @@ func (s *StaticImage) Render() {
 			}
 			dot.A = 0xff
 
-			img.Set(x, y, dot)
+			pixelRect := image.Rect(x*scaleRatio, y*scaleRatio, (x+1)*scaleRatio, (y+1)*scaleRatio)
+			draw.Draw(img, pixelRect, &image.Uniform{dot}, image.Point{}, draw.Src)
+
 		}
 	}
 
