@@ -7,7 +7,8 @@ import (
 	"github.com/HFO4/gbc-in-cloud/driver"
 	"github.com/HFO4/gbc-in-cloud/fyne"
 	"github.com/HFO4/gbc-in-cloud/gb"
-	"github.com/HFO4/gbc-in-cloud/server"
+	"github.com/HFO4/gbc-in-cloud/static"
+	"github.com/HFO4/gbc-in-cloud/stream"
 	"log"
 	"os"
 )
@@ -58,6 +59,14 @@ func startGUI(screen driver.DisplayDriver, control driver.ControllerDriver) {
 	})
 }
 
+func runStaticServer() {
+	server := static.StaticServer{
+		Port:     8080,
+		GamePath: "Pokemon - Red Version (USA, Europe) (SGB Enhanced).gb",
+	}
+	server.Run()
+}
+
 func runServer() {
 	if ConfigPath == "" {
 		log.Fatal("[Error] Game list not specified")
@@ -78,9 +87,9 @@ func runServer() {
 	bufReader := bufio.NewReader(configFile)
 	_, err = bufReader.Read(gameListStr)
 
-	streamServer := new(server.StreamServer)
+	streamServer := new(stream.StreamServer)
 	streamServer.Port = ListenPort
-	var gameList []server.GameInfo
+	var gameList []stream.GameInfo
 	err = json.Unmarshal(gameListStr, &gameList)
 	if err != nil {
 		log.Fatal("Unable to decode game list config file.")
@@ -90,6 +99,9 @@ func runServer() {
 }
 
 func main() {
+	runStaticServer()
+	return
+
 	flag.Parse()
 	if h {
 		flag.Usage()
