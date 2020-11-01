@@ -65,29 +65,29 @@
       <path style="fill:#2e3436;fill-opacity:1;stroke:none" d="m -707.28844,19.219325 512.00547,0 c 11.31592,0 20.42585,9.10993 20.42585,20.425852 l 0,826.717003 c -7.6485,18.31167 -15.577,27.14292 -27.5,36.717 -20.29712,16.29842 -45.97159,25.56657 -71.14014,32.21156 -29.10459,7.68418 -59.96532,5.4836 -89.93131,8.21429 l -343.85987,0 c -11.31592,0 -20.42585,-9.10993 -20.42585,-20.42585 l 0,-883.434003 c 0,-11.315922 9.10993,-20.425852 20.42585,-20.425852 z" id="path10396" sodipodi:nodetypes="ccccaaccccc"/>
       <path sodipodi:nodetypes="ccccaaccccc" id="rect9640" d="m -715.28844,5.2193251 512.00547,0 c 11.31592,0 20.42585,9.1099299 20.42585,20.4258519 l 0,826.717003 c -7.6485,18.31167 -15.577,27.14292 -27.5,36.717 -20.29712,16.29842 -45.97159,25.56657 -71.14014,32.21156 -29.10459,7.68418 -59.96532,5.4836 -89.93131,8.21429 l -343.85987,0 c -11.31592,0 -20.42585,-9.10993 -20.42585,-20.42585 l 0,-883.434003 c 0,-11.315922 9.10993,-20.4258519 20.42585,-20.4258519 z" style="fill:url(#linearGradient10795);fill-opacity:1;stroke:none"/>
       <path id="rect10154" d="m -671.71875,78.65625 c -11.23174,0 -20.28125,9.018262 -20.28125,20.25 l 0,323.75 c 0,11.23174 9.04951,20.28125 20.28125,20.28125 l 69.75,0 306.84375,0 13.8125,0 c 37.20694,0 67.15625,-29.94931 67.15625,-67.15625 l 0,-21.75 c 0.30501,-1.23772 0.5,-2.54051 0.5,-3.875 l 0,-255.5 c 0,-8.864698 -7.1353,-16 -16,-16 l -65.46875,0 -369.0625,0 -7.53125,0 z" style="fill:#888a85;fill-opacity:1;stroke:none"/>
-      <image ry="9.1661596" y="122.01169" x="-603.0611" height="276.78177" width="301.02545" id="rect10161" style="fill-opacity:1;stroke:none;z-index: 999999;" xlink:href="https://toy.aoaoao.me/image"/>
+      <image ry="9.1661596" y="122.01169" x="-603.0611" height="276.78177" width="301.02545" id="rect10161" style="fill-opacity:1;stroke:none;z-index: 999999;" xlink:href="{image}"/>
 
       <path transform="translate(-0.50507627,0.25253814)" d="m -648.51791,216.96603 c 0,4.18419 -3.39196,7.57615 -7.57615,7.57615 -4.18418,0 -7.57614,-3.39196 -7.57614,-7.57615 0,-4.18418 3.39196,-7.57614 7.57614,-7.57614 4.18419,0 7.57615,3.39196 7.57615,7.57614 z" sodipodi:ry="7.5761442" sodipodi:rx="7.5761442" sodipodi:cy="216.96603" sodipodi:cx="-656.09406" id="path10163" style="fill:url(#radialGradient10797);fill-opacity:1;stroke:none" sodipodi:type="arc"/>
       <path sodipodi:type="arc" style="fill:#482a50;fill-opacity:1;stroke:none" id="path10445" sodipodi:cx="-337.89603" sodipodi:cy="654.86713" sodipodi:rx="30.809652" sodipodi:ry="30.809652" d="m -307.08637,654.86713 c 0,17.0157 -13.79396,30.80965 -30.80966,30.80965 -17.0157,0 -30.80965,-13.79395 -30.80965,-30.80965 0,-17.0157 13.79395,-30.80966 30.80965,-30.80966 17.0157,0 30.80966,13.79396 30.80966,30.80966 z" transform="matrix(1.1147541,0,0,1.1147541,41.259725,-79.714678)"/>
-      <a xlink:href="https://toy.aoaoao.me/control?button=5&amp;callback=http://localhost:8000/gb.svg">
+      <a xlink:href="https://toy.aoaoao.me/control?button=5&amp;callback={callback}">
         <path transform="matrix(1.1147541,0,0,1.1147541,37.259725,-81.714678)" d="m -307.08637,654.86713 c 0,17.0157 -13.79396,30.80965 -30.80966,30.80965 -17.0157,0 -30.80965,-13.79395 -30.80965,-30.80965 0,-17.0157 13.79395,-30.80966 30.80965,-30.80966 17.0157,0 30.80966,13.79396 30.80966,30.80966 z" sodipodi:ry="30.809652" sodipodi:rx="30.809652" sodipodi:cy="654.86713" sodipodi:cx="-337.89603" id="path10165" style="fill:url(#radialGradient10799);fill-opacity:1;stroke:none" sodipodi:type="arc"/>
       </a>
       <path transform="matrix(1.1147541,0,0,1.1147541,135.20391,-122.14108)" d="m -307.08637,654.86713 c 0,17.0157 -13.79396,30.80965 -30.80966,30.80965 -17.0157,0 -30.80965,-13.79395 -30.80965,-30.80965 0,-17.0157 13.79395,-30.80966 30.80965,-30.80966 17.0157,0 30.80966,13.79396 30.80966,30.80966 z" sodipodi:ry="30.809652" sodipodi:rx="30.809652" sodipodi:cy="654.86713" sodipodi:cx="-337.89603" id="path10447" style="fill:#482a50;fill-opacity:1;stroke:none" sodipodi:type="arc"/>
-      <a xlink:href="https://toy.aoaoao.me/control?button=4&amp;callback=http://localhost:8000/gb.svg">
+      <a xlink:href="https://toy.aoaoao.me/control?button=4&amp;callback={callback}">
         <use style="fill:url(#radialGradient10801);fill-opacity:1" height="1052.3622" width="744.09448" transform="translate(93.944187,-42.426407)" id="use10167" xlink:href="#path10165" y="0" x="0"/>
       </a>
       <path style="fill:#555753;fill-opacity:1;stroke:none" d="m -639.40625,568.46875 c -1.72031,0 -3.09375,1.40469 -3.09375,3.125 l 0,41.21875 -41.21875,0 c -1.72031,0 -3.09375,1.37344 -3.09375,3.09375 l 0,45.5625 c 0,1.72031 1.37344,3.09375 3.09375,3.09375 l 41.21875,0 0,41.21875 c 0,1.72031 1.37344,3.09375 3.09375,3.09375 l 45.5625,0 c 1.72031,0 3.125,-1.37344 3.125,-3.09375 l 0,-41.21875 41.21875,0 c 1.72031,0 3.09375,-1.37344 3.09375,-3.09375 l 0,-45.5625 c 0,-1.72031 -1.37344,-3.09375 -3.09375,-3.09375 l -41.21875,0 0,-41.21875 c 0,-1.72031 -1.40469,-3.125 -3.125,-3.125 l -45.5625,0 z" id="path10435"/>
       <path id="rect10169" d="m -643.40625,566.46875 c -1.72031,0 -3.09375,1.40469 -3.09375,3.125 l 0,41.21875 -41.21875,0 c -1.72031,0 -3.09375,1.37344 -3.09375,3.09375 l 0,45.5625 c 0,1.72031 1.37344,3.09375 3.09375,3.09375 l 41.21875,0 0,41.21875 c 0,1.72031 1.37344,3.09375 3.09375,3.09375 l 45.5625,0 c 1.72031,0 3.125,-1.37344 3.125,-3.09375 l 0,-41.21875 41.21875,0 c 1.72031,0 3.09375,-1.37344 3.09375,-3.09375 l 0,-45.5625 c 0,-1.72031 -1.37344,-3.09375 -3.09375,-3.09375 l -41.21875,0 0,-41.21875 c 0,-1.72031 -1.40469,-3.125 -3.125,-3.125 l -45.5625,0 z" style="fill:url(#radialGradient10803);fill-opacity:1;stroke:none"/>
-      <a xlink:href="https://toy.aoaoao.me/control?button=0&amp;callback=http://localhost:8000/gb.svg">
+      <a xlink:href="https://toy.aoaoao.me/control?button=0&amp;callback={callback}">
         <rect xmlns="http://www.w3.org/2000/svg" x="-593" y="611.43" width="42.011" height="52.012" style="fill: transparent;"/>
       </a>
-      <a xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://toy.aoaoao.me/control?button=3&amp;callback=http://localhost:8000/gb.svg">
+      <a xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://toy.aoaoao.me/control?button=3&amp;callback={callback}">
         <rect xmlns="http://www.w3.org/2000/svg" x="-645" y="664.43" width="52.012" height="42.011" style="fill: transparent;"/>
       </a>
-      <a xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://toy.aoaoao.me/control?button=2&amp;callback=http://localhost:8000/gb.svg">
+      <a xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://toy.aoaoao.me/control?button=2&amp;callback={callback}">
         <rect xmlns="http://www.w3.org/2000/svg" x="-645" y="567.43" width="52.012" height="42.011" style="fill: transparent;"/>
       </a>
-      <a xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://toy.aoaoao.me/control?button=1&amp;callback=http://localhost:8000/gb.svg">
+      <a xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://toy.aoaoao.me/control?button=1&amp;callback={callback}">
         <rect xmlns="http://www.w3.org/2000/svg" x="-690" y="611.43" width="42.011" height="52.012" style="fill: transparent;"/>
       </a>
       <rect transform="matrix(0.50773289,0.86151455,-0.86151455,0.50773289,0,0)" ry="6.163682" y="747.47626" x="522.74963" height="12.327364" width="92.455238" id="rect10174" style="fill:url(#radialGradient10805);fill-opacity:1;stroke:none"/>
@@ -96,11 +96,11 @@
       <use height="1052.3622" width="744.09448" transform="translate(-27.779195,15.657364)" id="use10180" xlink:href="#use10178" y="0" x="0" style="fill:#555753"/>
       <use height="1052.3622" width="744.09448" transform="translate(-28.284271,15.152288)" id="use10182" xlink:href="#use10180" y="0" x="0" style="fill:#555753"/>
       <use height="1052.3622" width="744.09448" transform="translate(-28.789348,14.142136)" id="use10184" xlink:href="#use10182" y="0" x="0" style="fill:#555753"/>
-      <a xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://toy.aoaoao.me/control?button=7&amp;callback=http://localhost:8000/gb.svg">
+      <a xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://toy.aoaoao.me/control?button=7&amp;callback={callback}">
         <rect transform="matrix(0.88998879,-0.4559824,0.4559824,0.88998879,0,0)" ry="8.5714283" y="480.64062" x="-774.28363" height="17.142857" width="72.14286" id="rect10187" style="fill:url(#radialGradient10807);fill-opacity:1;stroke:none"/>
       </a>
       <use height="1052.3622" width="744.09448" transform="translate(-96.428571,-0.35714289)" id="use10189" xlink:href="#rect10187" y="0" x="0"/>
-      <a xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://toy.aoaoao.me/control?button=6&amp;callback=http://localhost:8000/gb.svg">
+      <a xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://toy.aoaoao.me/control?button=6&amp;callback={callback}">
         <use style="fill:#babdb6" x="0" y="0" xlink:href="#rect10187" id="use10191" transform="translate(-96.428571,-0.35714289)" width="744.09448" height="1052.3622"/>
       </a>
       <path id="path10193" d="m -735.71429,50.933611 552.85715,0" style="fill:none;stroke:#555753;stroke-width:6;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"/>
