@@ -44,7 +44,8 @@ func (server *StaticServer) Run() {
 func showImage(server *StaticServer) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Cache-control", "no-cache")
-		w.Header().Set("Content-type", "image/png")
+		w.Header().Set("Cache-control", "no-cache")
+		w.Header().Set("Expires", time.Now().Add(time.Duration(-1)*time.Hour).Format(http.TimeFormat))
 		img := server.driver.Render()
 		png.Encode(w, img)
 	}
