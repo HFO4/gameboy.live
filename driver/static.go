@@ -1,12 +1,11 @@
 package driver
 
 import (
+	"github.com/HFO4/gbc-in-cloud/util"
 	"image"
 	"image/color"
 	"image/draw"
-	"image/png"
 	"log"
-	"os"
 	"sync"
 )
 
@@ -15,9 +14,17 @@ type StaticImage struct {
 	pixelsDirty *[160][144][3]uint8
 	// clean pixels to be displayed
 	pixelsClean [160][144][3]uint8
-	lock        sync.RWMutex
+	pixelLock   sync.RWMutex
 
 	inputStatus *byte
+	inputQueue  []*inputCommand
+	queueLock   sync.Mutex
+}
+
+type inputCommand struct {
+	button byte
+	ttl    int
+	issued bool
 }
 
 func (s *StaticImage) InitStatus(b *byte) {
@@ -25,7 +32,34 @@ func (s *StaticImage) InitStatus(b *byte) {
 }
 
 func (s *StaticImage) UpdateInput() bool {
-	return false
+	s.queueLock.Lock()
+	if len(s.inputQueue) == 0 {
+		s.queueLock.Unlock()
+		return false
+	}
+	newInput := s.inputQueue[0]
+	if newInput.ttl > 0 {
+		newInput.ttl--
+	} else {
+		s.inputQueue = s.inputQueue[1:]
+	}
+	s.queueLock.Unlock()
+
+	statusCopy := *s.inputStatus
+	if !newInput.issued {
+		statusCopy = util.ClearBit(statusCopy, uint(newInput.button))
+		newInput.issued = true
+	} else {
+		if newInput.ttl > 0 {
+			return false
+		} else {
+			statusCopy = util.SetBit(statusCopy, uint(newInput.button))
+		}
+	}
+
+	*s.inputStatus = statusCopy
+
+	return true
 }
 
 func (s *StaticImage) NewInput(bytes []byte) {
@@ -41,18 +75,18 @@ func (s *StaticImage) Run(drawSignal chan bool, f func()) {
 	for {
 		// drawSignal was sent by the emulator
 		<-drawSignal
-		s.lock.Lock()
+		s.pixelLock.Lock()
 		if s.pixelsDirty != nil {
 			s.pixelsClean = *s.pixelsDirty
 		}
-		s.lock.Unlock()
+		s.pixelLock.Unlock()
 	}
 }
 
 // Render raw pixels into images
-func (s *StaticImage) Render() {
+func (s *StaticImage) Render() *image.RGBA {
 	scaleRatio := 4
-	s.lock.RLock()
+	s.pixelLock.RLock()
 
 	img := image.NewRGBA(image.Rect(0, 0, 160*scaleRatio, 144*scaleRatio))
 
@@ -85,10 +119,14 @@ func (s *StaticImage) Render() {
 
 		}
 	}
+	s.pixelLock.RUnlock()
 
-	f, _ := os.Create("image.png")
-	png.Encode(f, img)
-	defer f.Close()
+	return img
+}
 
-	s.lock.RUnlock()
+// Render raw pixels into images
+func (s *StaticImage) EnqueueInput(button byte) {
+	s.queueLock.Lock()
+	s.inputQueue = append(s.inputQueue, &inputCommand{button, 3, false})
+	s.queueLock.Unlock()
 }
