@@ -3,13 +3,17 @@
 
 ![https://github.com/HFO4/gameboy.live/raw/master/doc/screenshot.png](https://github.com/HFO4/gameboy.live/raw/master/doc/screenshot.png)
 
-Or, "Cloud Game" in your terminal with a single command:
+Or, "Cloud Game" in your terminal with a single command (The demo server is down now, you have to deploy on you own server):
 
 ```
 telnet gameboy.live 1989
 ```
 
 ![https://github.com/HFO4/gameboy.live/raw/master/doc/cloud-gaming.gif](https://github.com/HFO4/gameboy.live/raw/master/doc/cloud-gaming.gif)
+
+Even play with other visitors together on [someone's GitHub profile](https://github.com/HFO4):
+
+![https://user-images.githubusercontent.com/16058869/97843755-cff68580-1d24-11eb-85ef-ca9ae3f2f195.gif](https://user-images.githubusercontent.com/16058869/97843755-cff68580-1d24-11eb-85ef-ca9ae3f2f195.gif)
 
 ## Installation
 
@@ -26,6 +30,7 @@ go build -o gbdotlive main.go
 ```
 Usage of gbdotlive:
   -G    Play specific game in Fyne GUI mode
+  -S    Start a static image cloud-gaming server
   -c config
         Set the game option list config file path
   -d    Use Debugger in GUI mode
@@ -39,6 +44,7 @@ Usage of gbdotlive:
   -r ROM
         Set ROM file path to be played in GUI mode
   -s    Start a cloud-gaming server
+
 ```
 
 ### GUI mode
@@ -49,7 +55,7 @@ Play a specified ROM file in GUI mode:
 gbdotlive -G -r "Tetris.gb" 
 ```
 
-### Set up a Cloud Gaming server
+### Set up a telnet Cloud Gaming server
 
 You can use `Gameboy.Live` as a "Cloud Gaming" server, where players use telnet to play Gameboy games in terminal without additional software installation required. (Except telnet itself xD)
 
@@ -90,6 +96,24 @@ telnet <ip of your server>:<port>
 ```
 
 "Cloud Gaming" is only supported in terminals which support standard [ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code) and the UTF-8 charset. You can use `WSL` instead of `CMD` on Windows.
+
+### Set up a static Cloud Gaming server
+
+You can also set up a static cloud gaming server, where one specific game is emulated, everone can play it cooperatively by clicking hyperlinks. Start such a server with folowing command:
+
+```
+gbdotlive -S -r "Pokemon - Red Version (USA, Europe) (SGB Enhanced).gb" 
+```
+
+A HTTP server will start up on default port `1989`, these HTTP routes is avaliable to use:
+
+| Routes                                                | Method | Description                                                  |
+| ----------------------------------------------------- | ------ | ------------------------------------------------------------ |
+| `/image`                                              | GET    | Show the latest game screenshot.                             |
+| `/svg?callback=[Redirect URL]`                        | GET    | Show the latest game screenshot with Gameboy style border and clickable gamepad. An SVG template `gb.svg` is required. |
+| `/control?button=[Button ID]&callback=[Redirect URL]` | GET    | Send new gamepad input.                                      |
+
+
 
 ### Debug
 
