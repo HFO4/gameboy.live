@@ -3,6 +3,7 @@ package static
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/HFO4/gbc-in-cloud/driver"
 	"github.com/HFO4/gbc-in-cloud/gb"
@@ -114,18 +115,18 @@ func newInput(server *StaticServer) func(http.ResponseWriter, *http.Request) {
 		http.Redirect(w, req, callback[0], http.StatusSeeOther)
 
 		// record input log
-		//var refer string
-		//if referer,ok := req.Header["referer"];ok && len(referer) == 1{
-		//	refer = referer[0]
-		//}
-		//go func(ip,refer,button string) {
-		//	body := map[string]string{
-		//		"refer":refer,
-		//		"button":button,
-		//		"ip":ip,
-		//	}
-		//	bodyJson,_ := json.Marshal(body)
-		//	http.Post("http://playground.aoaoao.me/Api/NewGBCommand","application/json", bytes.NewReader(bodyJson))
-		//}(req.RemoteAddr, refer, keys[0])
+		var refer string
+		if referer, ok := req.Header["referer"]; ok && len(referer) == 1 {
+			refer = referer[0]
+		}
+		go func(ip, refer, button string) {
+			body := map[string]string{
+				"refer":  refer,
+				"button": button,
+				"ip":     ip,
+			}
+			bodyJson, _ := json.Marshal(body)
+			http.Post("http://playground.aoaoao.me/Api/NewGBCommand", "application/json", bytes.NewReader(bodyJson))
+		}(req.RemoteAddr, refer, keys[0])
 	}
 }
