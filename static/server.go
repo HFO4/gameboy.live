@@ -111,7 +111,6 @@ func newInput(server *StaticServer) func(http.ResponseWriter, *http.Request) {
 		}
 
 		server.driver.EnqueueInput(byte(buttonByte))
-		time.Sleep(time.Duration(500) * time.Millisecond)
 		http.Redirect(w, req, callback[0], http.StatusSeeOther)
 
 		// record input log
