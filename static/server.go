@@ -9,6 +9,7 @@ import (
 	"image/png"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -73,12 +74,24 @@ func showSVG(server *StaticServer) func(http.ResponseWriter, *http.Request) {
 }
 
 func showImage(server *StaticServer) func(http.ResponseWriter, *http.Request) {
+	lastSave := time.Now().Add(time.Duration(-1) * time.Hour)
 	return func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Cache-control", "no-cache,max-age=0")
 		w.Header().Set("Content-type", "image/png")
 		w.Header().Set("Expires", time.Now().Add(time.Duration(-1)*time.Hour).UTC().Format(http.TimeFormat))
 		img := server.driver.Render()
 		png.Encode(w, img)
+
+		// Save snapshot every 10 minutes
+		if time.Now().Sub(lastSave).Minutes() > 10 {
+			lastSave = time.Now()
+			if snapshot, err := os.Create("snapshots/" + strconv.FormatInt(time.Now().Unix(), 10) + ".png"); err == nil {
+				png.Encode(snapshot, img)
+				snapshot.Close()
+			} else {
+				fmt.Println(err)
+			}
+		}
 	}
 }
 
@@ -87,7 +100,7 @@ func newInput(server *StaticServer) func(http.ResponseWriter, *http.Request) {
 		keys, ok := req.URL.Query()["button"]
 		callback, _ := req.URL.Query()["callback"]
 
-		if !ok || len(keys[0]) < 1 {
+		if !ok || len(keys) < 1 || len(callback) < 1 {
 			return
 		}
 
@@ -99,5 +112,20 @@ func newInput(server *StaticServer) func(http.ResponseWriter, *http.Request) {
 		server.driver.EnqueueInput(byte(buttonByte))
 		time.Sleep(time.Duration(500) * time.Millisecond)
 		http.Redirect(w, req, callback[0], http.StatusSeeOther)
+
+		// record input log
+		//var refer string
+		//if referer,ok := req.Header["referer"];ok && len(referer) == 1{
+		//	refer = referer[0]
+		//}
+		//go func(ip,refer,button string) {
+		//	body := map[string]string{
+		//		"refer":refer,
+		//		"button":button,
+		//		"ip":ip,
+		//	}
+		//	bodyJson,_ := json.Marshal(body)
+		//	http.Post("http://playground.aoaoao.me/Api/NewGBCommand","application/json", bytes.NewReader(bodyJson))
+		//}(req.RemoteAddr, refer, keys[0])
 	}
 }
