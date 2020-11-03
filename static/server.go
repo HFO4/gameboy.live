@@ -110,7 +110,12 @@ func newInput(server *StaticServer) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
+		if callback[0] == "v2" {
+			callback[0] = "https://www.v2ex.com/t/721249"
+		}
+
 		server.driver.EnqueueInput(byte(buttonByte))
+		time.Sleep(time.Duration(500) * time.Millisecond)
 		http.Redirect(w, req, callback[0], http.StatusSeeOther)
 
 		// record input log
