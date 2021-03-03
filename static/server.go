@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"github.com/HFO4/gbc-in-cloud/driver"
 	"github.com/HFO4/gbc-in-cloud/gb"
+	"github.com/gorilla/websocket"
 	"image/png"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -19,13 +21,17 @@ type StaticServer struct {
 	Port     int
 	GamePath string
 
-	driver *driver.StaticImage
+	driver   *driver.StaticImage
+	upgrader websocket.Upgrader
 }
 
 // Run Running the static-image gaming server
 func (server *StaticServer) Run() {
 	// startup the emulator
 	server.driver = &driver.StaticImage{}
+	server.upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool {
+		return true
+	}}
 	core := &gb.Core{
 		FPS:           60,
 		Clock:         4194304,
@@ -42,9 +48,31 @@ func (server *StaticServer) Run() {
 
 	// image and control server
 	http.HandleFunc("/image", showImage(server))
+	http.HandleFunc("/stream", streamImages(server))
 	http.HandleFunc("/svg", showSVG(server))
 	http.HandleFunc("/control", newInput(server))
 	http.ListenAndServe(fmt.Sprintf(":%d", server.Port), nil)
+}
+
+func streamImages(server *StaticServer) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		c, err := server.upgrader.Upgrade(w, req, nil)
+		if err != nil {
+			log.Print(":upgrade error: ", err)
+			return
+		}
+		defer log.Fatal(c.Close())
+		for {
+			img := server.driver.Render()
+			buf := new(bytes.Buffer)
+			png.Encode(buf, img)
+			err = c.WriteMessage(websocket.BinaryMessage, buf.Bytes())
+			if err != nil {
+				log.Println("write error:", err)
+				break
+			}
+		}
+	}
 }
 
 func showSVG(server *StaticServer) func(http.ResponseWriter, *http.Request) {
@@ -112,20 +140,5 @@ func newInput(server *StaticServer) func(http.ResponseWriter, *http.Request) {
 		server.driver.EnqueueInput(byte(buttonByte))
 		time.Sleep(time.Duration(500) * time.Millisecond)
 		http.Redirect(w, req, callback[0], http.StatusSeeOther)
-
-		// record input log
-		//var refer string
-		//if referer,ok := req.Header["referer"];ok && len(referer) == 1{
-		//	refer = referer[0]
-		//}
-		//go func(ip,refer,button string) {
-		//	body := map[string]string{
-		//		"refer":refer,
-		//		"button":button,
-		//		"ip":ip,
-		//	}
-		//	bodyJson,_ := json.Marshal(body)
-		//	http.Post("http://playground.aoaoao.me/Api/NewGBCommand","application/json", bytes.NewReader(bodyJson))
-		//}(req.RemoteAddr, refer, keys[0])
 	}
 }

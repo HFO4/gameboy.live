@@ -11,6 +11,7 @@ require (
 	github.com/go-gl/gl v0.0.0-20190320180904-bf2b1f2f34d7 // indirect
 	github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1 // indirect
 	github.com/go-gl/mathgl v0.0.0-20190416160123-c4601bc793c7 // indirect
+	github.com/gorilla/websocket v1.4.2
 	github.com/gosuri/uilive v0.0.2
 	github.com/logrusorgru/aurora v0.0.0-20190428105938-cea283e61946
 	github.com/reiver/go-oi v0.0.0-20160325061615-431c83978379 // indirect
