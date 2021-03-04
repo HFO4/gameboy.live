@@ -62,6 +62,26 @@ func streamImages(server *StaticServer) func(http.ResponseWriter, *http.Request)
 			return
 		}
 		defer c.Close()
+		go func() {
+			for {
+				_, msg, err2 := c.ReadMessage()
+				stringMsg := string(msg)
+				if err2 != nil {
+					log.Println(err2)
+					break
+				}
+				buttonByte, err3 := strconv.ParseUint(stringMsg, 10, 32)
+				if err3 != nil {
+					log.Println(err3)
+					continue
+				}
+				if buttonByte > 7 {
+					log.Printf("Received input (%s) > 7", stringMsg)
+					continue
+				}
+				server.driver.EnqueueInput(byte(buttonByte))
+			}
+		}()
 		for {
 			img := server.driver.Render()
 			buf := new(bytes.Buffer)
