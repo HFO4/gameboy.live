@@ -61,11 +61,15 @@ func streamImages(server *StaticServer) func(http.ResponseWriter, *http.Request)
 			log.Print(":upgrade error: ", err)
 			return
 		}
-		defer log.Fatal(c.Close())
+		defer c.Close()
 		for {
 			img := server.driver.Render()
 			buf := new(bytes.Buffer)
-			png.Encode(buf, img)
+			err = png.Encode(buf, img)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
 			err = c.WriteMessage(websocket.BinaryMessage, buf.Bytes())
 			if err != nil {
 				log.Println("write error:", err)
