@@ -113,10 +113,6 @@ A HTTP server will start up on default port `1989`, these HTTP routes is avaliab
 | `/svg?callback=[Redirect URL]`                        | GET    | Show the latest game screenshot with Gameboy style border and clickable gamepad. An SVG template `gb.svg` is required. |
 | `/control?button=[Button ID]&callback=[Redirect URL]` | GET    | Send new gamepad input.                                      |
 
-### Set up a Cloud Gaming server based on websockets
-
-A fork of this project is avaliable for setting up a streaming service with a websockets interface for sending static images so that you don't need to reload the website after each button press. Check [gameboy.live-websockets](https://github.com/szymonWojdat/gameboy.live-websockets) for details.
-
 ### Debug
 
 `Gameboy.Live` has a simple built-in debugger. To turn on debug mode, set the `d` flag to `true`:
