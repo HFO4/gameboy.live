@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Gameboy.live websocket demo</title>
+        <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+    </head>
+    <body>
+        <div id="app">
+            <img :src="imageURL" class="centered">
+            <p class="centered">
+                <ul>
+                    <li>Arrow keys work as expected</li>
+                    <li><kbd>Z</kbd> &rarr; A button</li>
+                    <li><kbd>X</kbd> &rarr; B button</li>
+                    <li><kbd>Space</kbd> &rarr; Start button</li>
+                    <li><kbd>Shift</kbd> &rarr; Select button</li>
+                </ul>
+            </p>
+        </div>
+    <script>
+
+    new Vue({
+      name: 'App',
+      data: () => {
+        return {
+          wsConn: new WebSocket("ws://127.0.0.1:1989/stream"),
+          input: "",
+          imageURL: null,
+          keys: {
+            UP: 2,
+            DOWN: 3,
+            LEFT: 1,
+            RIGHT: 0,
+            A: 4,
+            B: 5,
+            START: 7,
+            SELECT: 6,
+          }
+        }
+      },
+      methods: {
+        buttonUp () {
+          this.wsConn.send(this.keys.UP)
+        },
+        buttonDown () {
+          this.wsConn.send(this.keys.DOWN)
+        },
+        buttonLeft () {
+          this.wsConn.send(this.keys.LEFT)
+        },
+        buttonRight () {
+          this.wsConn.send(this.keys.RIGHT)
+        },
+        buttonA () {
+          this.wsConn.send(this.keys.A)
+        },
+        buttonB () {
+          this.wsConn.send(this.keys.B)
+        },
+        buttonStart () {
+          this.wsConn.send(this.keys.START)
+        },
+        buttonSelect () {
+          this.wsConn.send(this.keys.SELECT)
+        },
+        handleKey (event) {
+          switch (event.code) {
+            case "ArrowRight":
+              this.buttonRight();
+              break;
+            case "ArrowLeft":
+              this.buttonLeft();
+              break;
+            case "ArrowUp":
+              this.buttonUp();
+              break;
+            case "ArrowDown":
+              this.buttonDown();
+              break;
+            case "KeyZ":
+              this.buttonA();
+              break;
+            case "KeyX":
+              this.buttonB();
+              break;
+            case "Space":
+              this.buttonStart();
+              break;
+            case "ShiftLeft":
+            case "ShiftRight":
+              this.buttonSelect();
+              break;
+          }
+        }
+      },
+      created () {
+        this.wsConn.onmessage = (event) => {
+          if (this.imageURL !== null) {
+            URL.revokeObjectURL(this.imageURL)
+          }
+          this.imageURL = URL.createObjectURL(event.data)
+        }
+      },
+      mounted () {
+        window.addEventListener("keydown", (event) => this.handleKey(event))
+      }
+    }).$mount('#app')
+    </script>
+    </body>
+</html>
+<style>
+    .centered {
+        display: block;
+        margin: 3vh auto;
+        max-width: 50vw;
+    }
+</style>
