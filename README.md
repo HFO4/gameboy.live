@@ -191,6 +191,14 @@ There are still many TODOs：
 
 This emulator is just for learning and entertainment purposes. There are still many places to be perfected. Any suggestions or contributions is welcomed!
 
+## Credits
+
+Thanks:
+
+* [szymonWojdat](https://github.com/szymonWojdat) Adding a WebSockets implementation.
+* [andydotxyz](https://github.com/andydotxyz) Adding Fyne GUI driver and saving support for cartridges, also fixing some bugs.
+* [maxolasersquad](https://github.com/maxolasersquad) and [tilkinsc](https://github.com/tilkinsc) Polishing README and documents.
+
 ## Reference
 
 * [Pan Docs](http://bgb.bircd.org/pandocs.htm)
