@@ -31,4 +31,4 @@ A HTTP server will start up on default port `1989`.
     - B: `5`
     - Select: `6`
     - Start: `7`
-- check out `client_demo.html` for a simple demo (don't forget to run the server before using the command above &#x1F31D;)
+- check out `client_demo.html` for a simple demo and don't forget to run the server before by using the command above &#x1F31D;
