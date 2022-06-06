@@ -54,6 +54,7 @@ func (server *StaticServer) Run() {
 
 	http.HandleFunc("/controlWs", newInputWs(server))
 
+	log.Println(fmt.Sprintf("Serving on port %d", server.Port))
 	http.ListenAndServe(fmt.Sprintf(":%d", server.Port), nil)
 }
 
