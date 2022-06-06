@@ -85,18 +85,29 @@ func streamImages(server *StaticServer) func(http.ResponseWriter, *http.Request)
 				server.driver.EnqueueInput(byte(buttonByte))
 			}
 		}()
+
+		var isFirstFrame bool
+		var lastFrameIndex uint32
+
+		isFirstFrame = true
+		lastFrameIndex = 0
+
 		for {
-			img := server.driver.Render()
-			buf := new(bytes.Buffer)
-			err = png.Encode(buf, img)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			err = c.WriteMessage(websocket.BinaryMessage, buf.Bytes())
-			if err != nil {
-				log.Println("write error:", err)
-				break
+			if isFirstFrame || lastFrameIndex != server.driver.LastFrameIndex() {
+				isFirstFrame = false
+				lastFrameIndex = server.driver.LastFrameIndex()
+				img := server.driver.Render()
+				buf := new(bytes.Buffer)
+				err = png.Encode(buf, img)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				err = c.WriteMessage(websocket.BinaryMessage, buf.Bytes())
+				if err != nil {
+					log.Println("write error:", err)
+					break
+				}
 			}
 		}
 	}
