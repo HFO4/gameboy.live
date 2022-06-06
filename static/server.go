@@ -51,6 +51,9 @@ func (server *StaticServer) Run() {
 	http.HandleFunc("/stream", streamImages(server))
 	http.HandleFunc("/svg", showSVG(server))
 	http.HandleFunc("/control", newInput(server))
+
+	http.HandleFunc("/controlWs", newInputWs(server))
+
 	http.ListenAndServe(fmt.Sprintf(":%d", server.Port), nil)
 }
 
@@ -164,5 +167,34 @@ func newInput(server *StaticServer) func(http.ResponseWriter, *http.Request) {
 		server.driver.EnqueueInput(byte(buttonByte))
 		time.Sleep(time.Duration(500) * time.Millisecond)
 		http.Redirect(w, req, callback[0], http.StatusSeeOther)
+	}
+}
+
+func newInputWs(server *StaticServer) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		c, err := server.upgrader.Upgrade(w, req, nil)
+		if err != nil {
+			log.Print(":upgrade error: ", err)
+			return
+		}
+		defer c.Close()
+		for {
+			_, msg, err2 := c.ReadMessage()
+			stringMsg := string(msg)
+			if err2 != nil {
+				log.Println(err2)
+				break
+			}
+			buttonByte, err3 := strconv.ParseUint(stringMsg, 10, 32)
+			if err3 != nil {
+				log.Println(err3)
+				continue
+			}
+			if buttonByte > 7 {
+				log.Printf("Received input (%s) > 7", stringMsg)
+				continue
+			}
+			server.driver.EnqueueInput(byte(buttonByte))
+		}
 	}
 }
