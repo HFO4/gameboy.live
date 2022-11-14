@@ -1,13 +1,14 @@
-package server
+package stream
 
 import (
 	"fmt"
-	"github.com/HFO4/gbc-in-cloud/driver"
-	"github.com/HFO4/gbc-in-cloud/gb"
-	"github.com/logrusorgru/aurora"
 	"log"
 	"net"
 	"strconv"
+
+	"github.com/HFO4/gbc-in-cloud/driver"
+	"github.com/HFO4/gbc-in-cloud/gb"
+	"github.com/logrusorgru/aurora"
 )
 
 // Player Single player model
@@ -286,7 +287,7 @@ func (player *Player) Serve() {
 	}
 
 	// Set the display driver to TELNET
-	go player.Emulator.DisplayDriver.Run(player.Emulator.DrawSignal)
+	go player.Emulator.DisplayDriver.Run(player.Emulator.DrawSignal, func() {})
 	player.Emulator.Init((*player.GameList)[player.Selected].Path)
 	go player.Emulator.Run()
 

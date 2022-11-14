@@ -20,10 +20,9 @@ type ASCII struct {
 func (stream *ASCII) Init(pixels *[160][144][3]uint8, title string) {
 	stream.title = title
 	stream.pixels = pixels
-
 }
 
-func (stream *ASCII) Run(drawSignal chan bool) {
+func (stream *ASCII) Run(drawSignal chan bool, onQuit func()) {
 
 	for {
 		if !<-drawSignal {
@@ -50,7 +49,7 @@ func (stream *ASCII) Run(drawSignal chan bool) {
 }
 
 /*
-	Render pixels as Braille
+	Render pixelsDirty as Braille
 	Reference: https://github.com/gabrielrcouto/php-terminal-gameboy-emulator/blob/master/src/Canvas/TerminalCanvas.php
 */
 func (stream *ASCII) renderAscii(pixels [160][144]bool) {
