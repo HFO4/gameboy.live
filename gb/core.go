@@ -1,10 +1,11 @@
 package gb
 
 import (
-	"github.com/HFO4/gbc-in-cloud/driver"
-	"github.com/HFO4/gbc-in-cloud/util"
 	"log"
 	"time"
+
+	"github.com/HFO4/gbc-in-cloud/driver"
+	"github.com/HFO4/gbc-in-cloud/util"
 )
 
 type Core struct {
@@ -138,7 +139,7 @@ func (core *Core) Run() {
 }
 
 /*
-	Render a frame.
+Render a frame.
 */
 func (core *Core) Update() {
 	cyclesThisUpdate := 0
@@ -181,7 +182,7 @@ func (core *Core) UpdateIO(cycles int) {
 }
 
 /*
-	Check interrupt.
+Check interrupt.
 */
 func (core *Core) Interrupt() int {
 
@@ -243,7 +244,7 @@ func (core *Core) Interrupt() int {
 }
 
 /*
-	Performing an interrupt
+Performing an interrupt
 */
 func (core *Core) DoInterrupt(id int) {
 
@@ -287,7 +288,7 @@ func (core *Core) DoInterrupt(id int) {
 }
 
 /*
-	Check and update timers.
+Check and update timers.
 */
 func (core *Core) UpdateTimers(cycles int) {
 	core.DoDividerRegister(cycles)
@@ -308,7 +309,7 @@ func (core *Core) UpdateTimers(cycles int) {
 }
 
 /*
-	Request an Interrupt.
+Request an Interrupt.
 */
 func (core *Core) RequestInterrupt(id int) {
 	//Read the present Interrupt Flag
@@ -318,9 +319,9 @@ func (core *Core) RequestInterrupt(id int) {
 }
 
 /*
-	Update divider register.
-	This register is incremented at rate of 16384Hz (~16779Hz on SGB).
-	In CGB Double Speed Mode it is incremented twice as fast, ie. at 32768Hz.
+Update divider register.
+This register is incremented at rate of 16384Hz (~16779Hz on SGB).
+In CGB Double Speed Mode it is incremented twice as fast, ie. at 32768Hz.
 */
 func (core *Core) DoDividerRegister(cycles int) {
 	core.Timer.DividerRegister += cycles
@@ -331,14 +332,14 @@ func (core *Core) DoDividerRegister(cycles int) {
 }
 
 /*
-	Reset clock frequency.
+Reset clock frequency.
 */
 func (core *Core) SetClockFreq() {
 	core.Timer.TimerCounter = 0
 }
 
 /*
-	Check whether clock is enabled.
+Check whether clock is enabled.
 */
 func (core *Core) IsClockEnabled() bool {
 	if core.ReadMemory(0xFF07)&0x04 == 0x04 {
@@ -348,22 +349,21 @@ func (core *Core) IsClockEnabled() bool {
 }
 
 /*
-	Get clock frequency sign specified in TAC register.
+Get clock frequency sign specified in TAC register.
 */
 func (core *Core) GetClockFreq() byte {
 	return core.ReadMemory(0xFF07) & 0x3
 }
 
 /*
-	Get clock frequency sign according to clock frequency sign in TAC register.
-	FF07 - TAC - Timer Control (R/W)
-	  Bit 2    - Timer Stop  (0=Stop, 1=Start)
-	  Bits 1-0 - Input Clock Select
-             00:   4096 Hz    (~4194 Hz SGB)
-             01: 262144 Hz  (~268400 Hz SGB)
-             10:  65536 Hz   (~67110 Hz SGB)
-             11:  16384 Hz   (~16780 Hz SGB)
-
+		Get clock frequency sign according to clock frequency sign in TAC register.
+		FF07 - TAC - Timer Control (R/W)
+		  Bit 2    - Timer Stop  (0=Stop, 1=Start)
+		  Bits 1-0 - Input Clock Select
+	             00:   4096 Hz    (~4194 Hz SGB)
+	             01: 262144 Hz  (~268400 Hz SGB)
+	             10:  65536 Hz   (~67110 Hz SGB)
+	             11:  16384 Hz   (~16780 Hz SGB)
 */
 func (core *Core) GetClockFreqCount() int {
 	switch core.GetClockFreq() {
@@ -381,10 +381,10 @@ func (core *Core) GetClockFreqCount() int {
 }
 
 /*
-	Initialize Cartridge, load rom file and decode rom props
+Initialize Cartridge, load rom file and decode rom props
 */
 func (core *Core) initRom(romPath string) {
-	core.RamPath = romPath+".sav"
+	core.RamPath = romPath + ".sav"
 	romData := core.readRomFile(romPath)
 	ramData := core.readRamFile(core.RamPath)
 	if ramData == nil {
@@ -477,10 +477,18 @@ func (core *Core) initRom(romPath string) {
 			MBCType:   "MBC3",
 			ROMLength: len(romData),
 		}
-	//case 0x15, 0x16, 0x17:
-	//	log.Println("mbc4")
-	//case 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E:
-	//	log.Println("mbc5")
+	case 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E:
+		MBC := &MBC5{
+			rom:              romData,
+			CurrentROMBankLo: 0,
+			CurrentROMBankHi: false,
+			RAMBank:          ramData,
+		}
+		core.Cartridge.MBC = MBC
+		core.Cartridge.Props = &CartridgeProps{
+			MBCType:   "MBC5",
+			ROMLength: len(romData),
+		}
 	default:
 		log.Fatal("[Cartridge] Unsupported MBC type")
 	}
