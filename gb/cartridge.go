@@ -619,10 +619,6 @@ type MBC5 struct {
 	RAMBank          []byte
 	CurrentRAMBank   byte
 	EnableRAM        bool
-
-	rtc        []byte
-	latchedRtc []byte
-	latched    bool
 }
 
 func (mbc *MBC5) ReadRomBank(address uint16) byte {
@@ -635,24 +631,14 @@ func (mbc *MBC5) ReadRomBank(address uint16) byte {
 }
 
 func (mbc *MBC5) ReadRamBank(address uint16) byte {
-	if mbc.CurrentRAMBank >= 0x4 {
-		if mbc.latched {
-			return mbc.latchedRtc[mbc.CurrentRAMBank]
-		}
-		return mbc.rtc[mbc.CurrentRAMBank]
-	}
 	newAddress := uint32(address - 0xA000)
 	return mbc.RAMBank[newAddress+(uint32(mbc.CurrentRAMBank)*0x2000)]
 }
 
 func (mbc *MBC5) WriteRamBank(address uint16, data byte) {
 	if mbc.EnableRAM {
-		if mbc.CurrentRAMBank >= 0x4 {
-			mbc.rtc[mbc.CurrentRAMBank] = data
-		} else {
-			newAddress := uint32(address - 0xA000)
-			mbc.RAMBank[newAddress+(uint32(mbc.CurrentRAMBank)*0x2000)] = data
-		}
+		newAddress := uint32(address - 0xA000)
+		mbc.RAMBank[newAddress+(uint32(mbc.CurrentRAMBank)*0x2000)] = data
 	}
 }
 
@@ -713,15 +699,6 @@ func (mbc *MBC5) DoChangeHiRomBank(val byte) {
 
 func (mbc *MBC5) DoRAMBankChange(val byte) {
 	mbc.CurrentRAMBank = val
-}
-
-func (mbc *MBC5) DoChangeROMRAMMode(val byte) {
-	if val == 0x1 {
-		mbc.latched = false
-	} else if val == 0x0 {
-		mbc.latched = true
-		copy(mbc.rtc, mbc.latchedRtc)
-	}
 }
 
 func (mbc *MBC5) SaveRam(path string) {
