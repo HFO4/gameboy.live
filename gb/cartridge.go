@@ -2,27 +2,28 @@ package gb
 
 import (
 	"bufio"
-	"github.com/HFO4/gbc-in-cloud/util"
 	"log"
 	"os"
+
+	"github.com/HFO4/gbc-in-cloud/util"
 )
 
 /*
-	00h  ROM ONLY                 13h  MBC3+RAM+BATTERY
-	01h  MBC1                     15h  MBC4
-	02h  MBC1+RAM                 16h  MBC4+RAM
-	03h  MBC1+RAM+BATTERY         17h  MBC4+RAM+BATTERY
-	05h  MBC2                     19h  MBC5
-	06h  MBC2+BATTERY             1Ah  MBC5+RAM
-	08h  ROM+RAM                  1Bh  MBC5+RAM+BATTERY
-	09h  ROM+RAM+BATTERY          1Ch  MBC5+RUMBLE
-	0Bh  MMM01                    1Dh  MBC5+RUMBLE+RAM
-	0Ch  MMM01+RAM                1Eh  MBC5+RUMBLE+RAM+BATTERY
-	0Dh  MMM01+RAM+BATTERY        FCh  POCKET CAMERA
-	0Fh  MBC3+TIMER+BATTERY       FDh  BANDAI TAMA5
-	10h  MBC3+TIMER+RAM+BATTERY   FEh  HuC3
-	11h  MBC3                     FFh  HuC1+RAM+BATTERY
-	12h  MBC3+RAM
+00h  ROM ONLY                 13h  MBC3+RAM+BATTERY
+01h  MBC1                     15h  MBC4
+02h  MBC1+RAM                 16h  MBC4+RAM
+03h  MBC1+RAM+BATTERY         17h  MBC4+RAM+BATTERY
+05h  MBC2                     19h  MBC5
+06h  MBC2+BATTERY             1Ah  MBC5+RAM
+08h  ROM+RAM                  1Bh  MBC5+RAM+BATTERY
+09h  ROM+RAM+BATTERY          1Ch  MBC5+RUMBLE
+0Bh  MMM01                    1Dh  MBC5+RUMBLE+RAM
+0Ch  MMM01+RAM                1Eh  MBC5+RUMBLE+RAM+BATTERY
+0Dh  MMM01+RAM+BATTERY        FCh  POCKET CAMERA
+0Fh  MBC3+TIMER+BATTERY       FDh  BANDAI TAMA5
+10h  MBC3+TIMER+RAM+BATTERY   FEh  HuC3
+11h  MBC3                     FFh  HuC1+RAM+BATTERY
+12h  MBC3+RAM
 */
 var cartridgeTypeMap = map[byte]string{
 	byte(0x00): "ROM ONLY",
@@ -57,9 +58,11 @@ var cartridgeTypeMap = map[byte]string{
 }
 
 /*
-	ROM bank number is linked to the ROM Size byte (0148).
-		1 bank = 16 KBytes
-	0x00 means no bank required.
+ROM bank number is linked to the ROM Size byte (0148).
+
+	1 bank = 16 KBytes
+
+0x00 means no bank required.
 */
 var RomBankMap = map[byte]uint8{
 	byte(0x00): 2,
@@ -75,9 +78,11 @@ var RomBankMap = map[byte]uint8{
 }
 
 /*
-	RAM bank number is linked to the RAM Size byte (0149).
-		1 bank = 8 KBytes
-	0x00 means no bank required.
+RAM bank number is linked to the RAM Size byte (0149).
+
+	1 bank = 8 KBytes
+
+0x00 means no bank required.
 */
 var RamBankMap = map[byte]uint8{
 	byte(0x00): 0,
@@ -92,7 +97,7 @@ type Cartridge struct {
 }
 
 /*
-	Cartridge props
+Cartridge props
 */
 type CartridgeProps struct {
 	MBCType   string
@@ -111,8 +116,8 @@ type MBC interface {
 }
 
 /*
-	====================================
-	Single ROM without MBC
+====================================
+Single ROM without MBC
 */
 type MBCRom struct {
 	// ROM data
@@ -125,7 +130,8 @@ type MBCRom struct {
 	EnableRAM      bool
 }
 
-/**
+/*
+*
 Read a byte from RAM bank.
 In ROM only cartridge, RAM is not supported.
 */
@@ -133,7 +139,8 @@ func (mbc *MBCRom) ReadRamBank(address uint16) byte {
 	return byte(0x00)
 }
 
-/**
+/*
+*
 Write a byte from RAM bank.
 In ROM only cartridge, RAM is not supported.
 */
@@ -141,7 +148,8 @@ func (mbc *MBCRom) WriteRamBank(address uint16, data byte) {
 
 }
 
-/**
+/*
+*
 Read a byte from ROM bank.
 In ROM only cartridge, ROM banking is not supported.
 */
@@ -149,7 +157,8 @@ func (mbc *MBCRom) ReadRomBank(address uint16) byte {
 	return mbc.rom[address]
 }
 
-/**
+/*
+*
 Read a byte from raw rom via address
 */
 func (mbc *MBCRom) ReadRom(address uint16) byte {
@@ -167,8 +176,9 @@ func (mbc *MBCRom) SaveRam(path string) {
 */
 
 /*
-	====================================
-		MBC1
+====================================
+
+	MBC1
 */
 type MBC1 struct {
 	rom            []byte
@@ -180,11 +190,12 @@ type MBC1 struct {
 }
 
 /*
-	4000-7FFF - ROM Bank 01-7F (Read Only)
-		This area may contain any of the further 16KByte banks of the ROM,
-		allowing to address up to 125 ROM Banks (almost 2MByte). As described below,
-		bank numbers 20h, 40h, and 60h cannot be used, resulting in the odd amount of
-		125 banks.
+4000-7FFF - ROM Bank 01-7F (Read Only)
+
+	This area may contain any of the further 16KByte banks of the ROM,
+	allowing to address up to 125 ROM Banks (almost 2MByte). As described below,
+	bank numbers 20h, 40h, and 60h cannot be used, resulting in the odd amount of
+	125 banks.
 */
 func (mbc *MBC1) ReadRomBank(address uint16) byte {
 	newAddress := uint32(address - 0x4000)
@@ -192,12 +203,13 @@ func (mbc *MBC1) ReadRomBank(address uint16) byte {
 }
 
 /*
-	A000-BFFF - RAM Bank 00-03, if any (Read/Write)
-		This area is used to address external RAM in the cartridge (if any).
-		External RAM is often battery buffered, allowing to store game positions
-		or high score tables, even if the gameboy is turned off, or if the cartridge
-		is removed from the gameboy. Available RAM sizes are: 2KByte (at A000-A7FF),
-		8KByte (at A000-BFFF), and 32KByte (in form of four 8K banks at A000-BFFF).
+A000-BFFF - RAM Bank 00-03, if any (Read/Write)
+
+	This area is used to address external RAM in the cartridge (if any).
+	External RAM is often battery buffered, allowing to store game positions
+	or high score tables, even if the gameboy is turned off, or if the cartridge
+	is removed from the gameboy. Available RAM sizes are: 2KByte (at A000-A7FF),
+	8KByte (at A000-BFFF), and 32KByte (in form of four 8K banks at A000-BFFF).
 */
 func (mbc *MBC1) ReadRamBank(address uint16) byte {
 	newAddress := uint32(address - 0xA000)
@@ -329,8 +341,9 @@ func (mbc *MBC1) SaveRam(path string) {
 */
 
 /*
-	====================================
-		MBC2
+====================================
+
+	MBC2
 */
 type MBC2 struct {
 	rom            []byte
@@ -454,8 +467,9 @@ func (mbc *MBC2) SaveRam(path string) {
 */
 
 /*
-	====================================
-		MBC3
+====================================
+
+	MBC3
 */
 type MBC3 struct {
 	rom            []byte
@@ -589,11 +603,115 @@ func (mbc *MBC3) SaveRam(path string) {
 }
 
 /*
-		MBC3  END
+	MBC3  END
 	====================================
 */
+
 /*
-	Read cartridge data from file
+====================================
+
+	MBC5
+*/
+type MBC5 struct {
+	rom              []byte
+	CurrentROMBankLo byte
+	CurrentROMBankHi bool
+	RAMBank          []byte
+	CurrentRAMBank   byte
+	EnableRAM        bool
+}
+
+func (mbc *MBC5) ReadRomBank(address uint16) byte {
+	newAddress := uint32(address - 0x4000)
+	romBank := uint32(mbc.CurrentROMBankLo)
+	if mbc.CurrentROMBankHi {
+		romBank += 0x100
+	}
+	return mbc.rom[newAddress+romBank*0x4000]
+}
+
+func (mbc *MBC5) ReadRamBank(address uint16) byte {
+	newAddress := uint32(address - 0xA000)
+	return mbc.RAMBank[newAddress+(uint32(mbc.CurrentRAMBank)*0x2000)]
+}
+
+func (mbc *MBC5) WriteRamBank(address uint16, data byte) {
+	if mbc.EnableRAM {
+		newAddress := uint32(address - 0xA000)
+		mbc.RAMBank[newAddress+(uint32(mbc.CurrentRAMBank)*0x2000)] = data
+	}
+}
+
+func (mbc *MBC5) ReadRom(address uint16) byte {
+	return mbc.rom[address]
+}
+func (mbc *MBC5) HandleBanking(address uint16, val byte) {
+	if address < 0x2000 {
+		/*
+			0000-1FFF - RAM Enable (Write Only)
+				Mostly the same as for MBC1.
+				Writing $0A will enable reading and writing to external RAM.
+				Writing $00 will disable it.
+		*/
+		mbc.DoRamBankEnable(address, val)
+
+	} else if (address >= 0x2000) && (address < 0x3000) {
+		/*
+			2000-2FFF - 8 least significant bits of ROM bank number (Write Only)
+				The 8 least significant bits of the ROM bank number go here.
+				Writing 0 will indeed give bank 0 on MBC5, unlike other MBCs.
+		*/
+		mbc.DoChangeLoROMBank(val)
+
+	} else if (address >= 0x3000) && (address < 0x4000) {
+		/*
+			3000-3FFF - 9th bit of ROM bank number (Write Only)
+				The 9th bit of the ROM bank number goes here.
+		*/
+		mbc.DoChangeHiRomBank(val)
+
+	} else if (address >= 0x4000) && (address < 0x6000) {
+		/*
+			4000-5FFF - RAM bank number (Write Only)
+				As for the MBC1s RAM Banking Mode, writing a value in the range $00-$0F maps the corresponding external RAM bank (if any) into the memory area at A000-BFFF.
+		*/
+		mbc.DoRAMBankChange(val)
+
+	}
+}
+
+func (mbc *MBC5) DoRamBankEnable(address uint16, val byte) {
+	testData := val & 0xA
+	if testData != 0 {
+		mbc.EnableRAM = true
+	} else if testData == 0x0 {
+		mbc.EnableRAM = false
+	}
+}
+
+func (mbc *MBC5) DoChangeLoROMBank(val byte) {
+	mbc.CurrentROMBankLo = val
+}
+
+func (mbc *MBC5) DoChangeHiRomBank(val byte) {
+	mbc.CurrentROMBankHi = val > 0x0
+}
+
+func (mbc *MBC5) DoRAMBankChange(val byte) {
+	mbc.CurrentRAMBank = val
+}
+
+func (mbc *MBC5) SaveRam(path string) {
+	writeRamFile(path, mbc.RAMBank)
+}
+
+/*
+		MBC5  END
+	====================================
+*/
+
+/*
+Read cartridge data from file
 */
 func (core *Core) readRomFile(romPath string) []byte {
 	return readDataFile(romPath, false)
