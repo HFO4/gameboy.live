@@ -181,7 +181,7 @@ func (core *Core) RenderTiles() {
 	//		the window at upper left, it is then completly covering normal
 	//		background.
 	windowY := core.ReadMemory(0xFF4A)
-	windowX := core.ReadMemory(0xFF4B) - 7
+	windowX := int(core.ReadMemory(0xFF4B)) - 7
 
 	usingWindow := false
 
@@ -237,12 +237,12 @@ func (core *Core) RenderTiles() {
 	// for this scanline
 	for pixel := byte(0); pixel < 160; pixel++ {
 
-		xPos := byte(pixel) + scrollX
+		xPos := int(byte(pixel) + scrollX)
 
 		// translate the current x pos to window space if necessary
 		if usingWindow {
-			if pixel >= windowX {
-				xPos = pixel - windowX
+			if int(pixel) >= windowX {
+				xPos = int(pixel) - windowX
 			}
 		}
 
