@@ -471,6 +471,7 @@ func (core *Core) initRom(romPath string) {
 			CurrentROMBank: 1,
 			CurrentRAMBank: 0,
 			RAMBank:        ramData,
+            rtc: make([]byte, 0x10),
 		}
 		core.Cartridge.MBC = MBC
 		core.Cartridge.Props = &CartridgeProps{
