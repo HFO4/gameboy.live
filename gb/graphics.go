@@ -153,7 +153,6 @@ var last uint16
 */
 func (core *Core) RenderTiles() {
 	var tileData uint16 = 0
-	var backgroundMemory uint16 = 0
 	var unsig bool = true
 	lcdControl := core.ReadMemory(0xFF40)
 
@@ -205,20 +204,15 @@ func (core *Core) RenderTiles() {
 		unsig = false
 	}
 
-	// which background mem?
-	if !usingWindow {
-		if util.TestBit(lcdControl, 3) {
-			backgroundMemory = 0x9C00
-		} else {
-			backgroundMemory = 0x9800
-		}
-	} else {
-		if util.TestBit(lcdControl, 6) {
-			backgroundMemory = 0x9C00
-		} else {
-			backgroundMemory = 0x9800
-		}
-	}
+    var windowMemory uint16 = 0x9800
+    if util.TestBit(lcdControl, 6) {
+        windowMemory = 0x9C00
+    }
+
+    var backgroundMemory uint16 = 0x9800
+    if util.TestBit(lcdControl, 3) {
+        backgroundMemory = 0x9C00
+    }
 
 	// yPos is used to calculate which of 32 vertical tiles the
 	// current scanline is drawing
@@ -250,9 +244,15 @@ func (core *Core) RenderTiles() {
 		tileCol := uint16(xPos / 8)
 		var tileNum int16
 
+        // if pixel of scanline is >= WX and using window, use window address,
+        // not background
+		tileAddress := backgroundMemory + tileRow + tileCol
+        if usingWindow && int(pixel) >= windowX {
+            tileAddress = windowMemory + tileRow + tileCol
+        }
+
 		// get the tile identity number. Remember it can be signed
 		// or unsigned
-		tileAddress := backgroundMemory + tileRow + tileCol
 		if unsig {
 			tileNum = int16(core.ReadMemory(tileAddress))
 		} else {
