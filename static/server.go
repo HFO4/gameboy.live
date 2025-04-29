@@ -51,6 +51,10 @@ func (server *StaticServer) Run() {
 	http.HandleFunc("/stream", streamImages(server))
 	http.HandleFunc("/svg", showSVG(server))
 	http.HandleFunc("/control", newInput(server))
+
+	http.HandleFunc("/controlWs", newInputWs(server))
+
+	log.Println(fmt.Sprintf("Serving on port %d", server.Port))
 	http.ListenAndServe(fmt.Sprintf(":%d", server.Port), nil)
 }
 
@@ -82,18 +86,29 @@ func streamImages(server *StaticServer) func(http.ResponseWriter, *http.Request)
 				server.driver.EnqueueInput(byte(buttonByte))
 			}
 		}()
+
+		var isFirstFrame bool
+		var lastFrameIndex uint32
+
+		isFirstFrame = true
+		lastFrameIndex = 0
+
 		for {
-			img := server.driver.Render()
-			buf := new(bytes.Buffer)
-			err = png.Encode(buf, img)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			err = c.WriteMessage(websocket.BinaryMessage, buf.Bytes())
-			if err != nil {
-				log.Println("write error:", err)
-				break
+			if isFirstFrame || lastFrameIndex != server.driver.LastFrameIndex() {
+				isFirstFrame = false
+				lastFrameIndex = server.driver.LastFrameIndex()
+				img := server.driver.Render()
+				buf := new(bytes.Buffer)
+				err = png.Encode(buf, img)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				err = c.WriteMessage(websocket.BinaryMessage, buf.Bytes())
+				if err != nil {
+					log.Println("write error:", err)
+					break
+				}
 			}
 		}
 	}
@@ -164,5 +179,34 @@ func newInput(server *StaticServer) func(http.ResponseWriter, *http.Request) {
 		server.driver.EnqueueInput(byte(buttonByte))
 		time.Sleep(time.Duration(500) * time.Millisecond)
 		http.Redirect(w, req, callback[0], http.StatusSeeOther)
+	}
+}
+
+func newInputWs(server *StaticServer) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		c, err := server.upgrader.Upgrade(w, req, nil)
+		if err != nil {
+			log.Print(":upgrade error: ", err)
+			return
+		}
+		defer c.Close()
+		for {
+			_, msg, err2 := c.ReadMessage()
+			stringMsg := string(msg)
+			if err2 != nil {
+				log.Println(err2)
+				break
+			}
+			buttonByte, err3 := strconv.ParseUint(stringMsg, 10, 32)
+			if err3 != nil {
+				log.Println(err3)
+				continue
+			}
+			if buttonByte > 7 {
+				log.Printf("Received input (%s) > 7", stringMsg)
+				continue
+			}
+			server.driver.EnqueueInput(byte(buttonByte))
+		}
 	}
 }

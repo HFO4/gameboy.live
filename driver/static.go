@@ -16,6 +16,8 @@ type StaticImage struct {
 	pixelsClean [160][144][3]uint8
 	pixelLock   sync.RWMutex
 
+	lastFrameIndex uint32
+
 	inputStatus *byte
 	inputQueue  []*inputCommand
 	queueLock   sync.Mutex
@@ -78,9 +80,17 @@ func (s *StaticImage) Run(drawSignal chan bool, f func()) {
 		s.pixelLock.Lock()
 		if s.pixelsDirty != nil {
 			s.pixelsClean = *s.pixelsDirty
+			s.lastFrameIndex++
 		}
 		s.pixelLock.Unlock()
 	}
+}
+
+func (s *StaticImage) LastFrameIndex() uint32 {
+	s.pixelLock.RLock()
+	lastFrameIndex := s.lastFrameIndex
+	s.pixelLock.RUnlock()
+	return lastFrameIndex
 }
 
 // Render raw pixels into images
